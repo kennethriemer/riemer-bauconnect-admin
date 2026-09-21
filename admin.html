@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Riemer BauConnect – Admin</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#171717;color:#fff;font-family:Arial,sans-serif}
+.wrap{max-width:950px;margin:auto;padding:20px}
+h1{margin:0 0 6px;font-size:28px}.yellow{color:#ffd400}
+.small{color:#aaa;margin-bottom:18px}
+.card{background:#222;border:1px solid #3a3a3a;border-radius:14px;padding:18px;margin-bottom:18px}
+input,button{width:100%;padding:13px;border-radius:9px;font-size:16px}
+input{background:#111;color:#fff;border:1px solid #555;margin:6px 0 10px}
+button{border:0;background:#ffd400;color:#111;font-weight:700;margin-top:6px}
+button.secondary{background:#333;color:#fff}
+button.danger{background:#a52a2a;color:#fff}
+.hidden{display:none}.error{background:#5a2020;padding:12px;border-radius:9px;margin-top:10px}
+.success{background:#245b2d;padding:12px;border-radius:9px;margin-top:10px}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:760px}
+th,td{text-align:left;padding:10px;border-bottom:1px solid #3a3a3a;vertical-align:top}
+th{color:#ffd400}.muted{color:#aaa}
+.badge{display:inline-block;padding:4px 8px;border-radius:20px;background:#333}
+.top{display:flex;gap:10px;justify-content:space-between;align-items:center}
+.top button{width:auto;padding:10px 16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>RIEMER <span class="yellow">BAUCONNECT</span></h1>
+      <div class="small">Verwaltungsbereich – Bauanfragen</div>
+    </div>
+    <button id="logoutBtn" class="secondary hidden">Abmelden</button>
+  </div>
+
+  <section id="loginCard" class="card">
+    <h2>Admin-Login</h2>
+    <label>E-Mail</label>
+    <input id="email" type="email" autocomplete="username" placeholder="Deine Admin-E-Mail">
+    <label>Passwort</label>
+    <input id="password" type="password" autocomplete="current-password" placeholder="Dein Passwort">
+    <button id="loginBtn">Anmelden</button>
+    <div id="loginMsg"></div>
+  </section>
+
+  <section id="adminCard" class="card hidden">
+    <div class="top">
+      <h2>Bauanfragen</h2>
+      <button id="refreshBtn" class="secondary">Aktualisieren</button>
+    </div>
+    <div id="adminMsg"></div>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Datum</th>
+            <th>Leistung</th>
+            <th>PLZ</th>
+            <th>Ort</th>
+            <th>Name</th>
+            <th>Telefon</th>
+            <th>E-Mail</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="requestsBody">
+          <tr><td colspan="8" class="muted">Noch keine Daten geladen.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<script>
+const SUPABASE_URL = "https://ehzugjmltfcvllftpjpp.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_Ieo0pxh7y8L4nr2xMS7fQQ_mPonnlOm";
+
+const client = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY
+);
+
+const loginCard = document.getElementById("loginCard");
+const adminCard = document.getElementById("adminCard");
+const logoutBtn = document.getElementById("logoutBtn");
+const loginMsg = document.getElementById("loginMsg");
+const adminMsg = document.getElementById("adminMsg");
+const body = document.getElementById("requestsBody");
+
+function showLoginError(text){
+  loginMsg.innerHTML = '<div class="error">' + text + '</div>';
+}
+function showAdminError(text){
+  adminMsg.innerHTML = '<div class="error">' + text + '</div>';
+}
+
+async function loadRequests(){
+  adminMsg.innerHTML = "";
+  body.innerHTML = '<tr><td colspan="8" class="muted">Lade Bauanfragen …</td></tr>';
+
+  const { data, error } = await client
+    .from("bauanfragen")
+    .select("id,service,plz,area,description,name,phone,email,status,created_at")
+    .order("created_at", { ascending:false });
+
+  if(error){
+    body.innerHTML = "";
+    showAdminError("Bauanfragen konnten nicht geladen werden: " + error.message);
+    return;
+  }
+
+  if(!data || data.length === 0){
+    body.innerHTML = '<tr><td colspan="8" class="muted">Keine Bauanfragen vorhanden.</td></tr>';
+    return;
+  }
+
+  body.innerHTML = data.map(row => {
+    const date = row.created_at
+      ? new Date(row.created_at).toLocaleString("de-DE")
+      : "—";
+    return `
+      <tr>
+        <td>${escapeHtml(date)}</td>
+        <td><strong>${escapeHtml(row.service || "—")}</strong><br>
+            <span class="muted">${escapeHtml(row.description || "")}</span></td>
+        <td>${escapeHtml(row.plz || "—")}</td>
+        <td>${escapeHtml(row.area || "—")}</td>
+        <td>${escapeHtml(row.name || "—")}</td>
+        <td>${escapeHtml(row.phone || "—")}</td>
+        <td>${escapeHtml(row.email || "—")}</td>
+        <td><span class="badge">${escapeHtml(row.status || "—")}</span></td>
+      </tr>`;
+  }).join("");
+}
+
+function escapeHtml(value){
+  return String(value)
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+async function updateUI(){
+  const { data:{ session } } = await client.auth.getSession();
+
+  if(session){
+    loginCard.classList.add("hidden");
+    adminCard.classList.remove("hidden");
+    logoutBtn.classList.remove("hidden");
+    await loadRequests();
+  }else{
+    loginCard.classList.remove("hidden");
+    adminCard.classList.add("hidden");
+    logoutBtn.classList.add("hidden");
+  }
+}
+
+document.getElementById("loginBtn").addEventListener("click", async () => {
+  loginMsg.innerHTML = "";
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+
+  if(!email || !password){
+    showLoginError("Bitte E-Mail und Passwort eingeben.");
+    return;
+  }
+
+  const { error } = await client.auth.signInWithPassword({ email, password });
+
+  if(error){
+    showLoginError("Anmeldung fehlgeschlagen. Bitte Zugangsdaten prüfen.");
+    return;
+  }
+
+  await updateUI();
+});
+
+document.getElementById("logoutBtn").addEventListener("click", async () => {
+  await client.auth.signOut();
+  await updateUI();
+});
+
+document.getElementById("refreshBtn").addEventListener("click", loadRequests);
+
+client.auth.onAuthStateChange(() => {
+  updateUI();
+});
+
+updateUI();
+</script>
+</body>
+</html>
