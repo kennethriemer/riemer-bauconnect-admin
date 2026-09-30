@@ -3,91 +3,208 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#171717">
 <title>Riemer BauConnect – Admin</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <style>
-*{box-sizing:border-box}
-body{margin:0;background:#171717;color:#fff;font-family:Arial,sans-serif}
-.wrap{max-width:1100px;margin:auto;padding:24px}
-h1{margin:0;font-size:36px}
-.brand{color:#ffd000}
-.subtitle{color:#aaa;font-size:20px;margin:8px 0 30px}
-.card{background:#222;border:1px solid #3a3a3a;border-radius:20px;padding:24px;margin-bottom:20px}
-input,button,select,textarea{
-  width:100%;padding:15px;border-radius:12px;
-  border:1px solid #444;font-size:16px
+:root {
+  --bg:#171717;
+  --panel:#222;
+  --card:#292929;
+  --line:#414141;
+  --yellow:#ffd000;
+  --text:#f5f5f5;
+  --muted:#aaa;
+  --green:#235c32;
+  --red:#6b2222;
 }
-input,select,textarea{
-  background:#111;color:#fff;margin:8px 0 15px
+* { box-sizing:border-box; }
+body {
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:Arial,sans-serif;
+  line-height:1.45;
 }
-textarea{min-height:120px;resize:vertical}
-button{background:#ffd000;color:#111;border:0;font-weight:bold;cursor:pointer}
-button:disabled{opacity:.55;cursor:wait}
-button.secondary{background:#333;color:#fff}
-button.danger{background:#7b2929;color:#fff}
-.hidden{display:none!important}
-.error{background:#6b2222;padding:15px;border-radius:12px;margin-top:15px;overflow-wrap:anywhere}
-.success{background:#235c32;padding:15px;border-radius:12px;margin-top:15px;overflow-wrap:anywhere}
-.topbar{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:20px}
-.topbar button{width:auto;padding:12px 20px}
-.tabs{display:flex;gap:10px;margin:20px 0;flex-wrap:wrap}
-.tabs button{width:auto;flex:1;min-width:150px}
-.tabs button.active{outline:2px solid #fff}
-.request,.firm{background:#292929;border:1px solid #444;border-radius:15px;padding:18px;margin-top:15px}
-.request{cursor:pointer}
-.request:hover,.firm:hover{border-color:#ffd000}
-.request-title,.firm-title{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
-.request-service,.firm-name{color:#ffd000;font-size:20px;font-weight:bold;overflow-wrap:anywhere}
-.request-date,.muted{color:#999;font-size:14px}
-.request-info,.firm-info{color:#ccc;margin-top:8px;overflow-wrap:anywhere}
-.badge{display:inline-block;background:#333;padding:6px 10px;border-radius:8px;margin-top:10px}
-.badge.pending{background:#72551b}
-.badge.approved{background:#235c32}
-.firm-actions,.edit-actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
-.firm-actions button,.edit-actions button{width:auto;flex:1;min-width:140px}
-.detail{margin-top:20px}
-.detail-row{border-bottom:1px solid #3b3b3b;padding:14px 0}
-.detail-label{color:#ffd000;font-size:14px;margin-bottom:5px}
-.detail-value{font-size:17px;word-break:break-word}
-.back{margin-bottom:15px}
-.small{color:#aaa;margin-top:6px}
-@media(max-width:600px){
-  .wrap{padding:16px}
-  h1{font-size:30px}
-  .topbar{align-items:flex-start;flex-direction:column}
-  .topbar button{width:100%}
-  .request-title,.firm-title{flex-direction:column}
-  .firm-actions,.edit-actions{flex-direction:column}
-  .firm-actions button,.edit-actions button{width:100%}
-  .card{padding:18px}
+.wrap { max-width:980px; margin:auto; padding:16px; }
+h1 { font-size:clamp(25px,5vw,36px); margin:0; }
+h2 { margin:0 0 8px; font-size:24px; }
+.brand { color:var(--yellow); }
+.subtitle,.muted,.small { color:var(--muted); }
+.subtitle { margin:6px 0 22px; }
+.panel {
+  background:var(--panel);
+  border:1px solid #383838;
+  border-radius:16px;
+  padding:18px;
+  margin-bottom:16px;
+}
+.hidden { display:none!important; }
+label { display:block; font-weight:bold; margin:10px 0 4px; }
+input,select,textarea,button {
+  font:inherit;
+  border-radius:10px;
+}
+input,select,textarea {
+  width:100%;
+  padding:12px;
+  background:#111;
+  color:white;
+  border:1px solid #494949;
+  margin:4px 0 12px;
+}
+textarea { min-height:110px; resize:vertical; }
+button {
+  border:0;
+  background:var(--yellow);
+  color:#111;
+  font-weight:bold;
+  padding:13px 14px;
+  cursor:pointer;
+  touch-action:manipulation;
+}
+button:disabled { opacity:.55; cursor:wait; }
+button.secondary {
+  background:#373737;
+  color:white;
+  border:1px solid #4a4a4a;
+}
+button.full { width:100%; }
+button:focus-visible,.request:focus-visible {
+  outline:3px solid white;
+  outline-offset:2px;
+}
+.topbar {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:14px;
+}
+.topbar button { width:auto; }
+.tabs { display:flex; gap:8px; margin:14px 0; }
+.tabs button { flex:1; background:#333; color:white; }
+.tabs button.active { background:var(--yellow); color:#111; }
+.tools {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(140px,.55fr);
+  gap:10px;
+  margin:14px 0;
+}
+.tools input,.tools select { margin:0; }
+.summary { font-size:14px; color:var(--muted); margin:10px 0; }
+.request,.firm {
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:13px;
+  padding:14px;
+  margin-top:10px;
+}
+.request { cursor:pointer; }
+.request:hover { border-color:var(--yellow); }
+.request-head {
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:10px;
+}
+.request-service,.firm-name {
+  font-size:18px;
+  font-weight:bold;
+  color:var(--yellow);
+  overflow-wrap:anywhere;
+}
+.request-date {
+  font-size:12px;
+  color:var(--muted);
+  text-align:right;
+}
+.request-meta {
+  font-size:14px;
+  color:#ddd;
+  margin-top:5px;
+  overflow-wrap:anywhere;
+}
+.badge {
+  display:inline-block;
+  padding:5px 9px;
+  border-radius:20px;
+  background:#383838;
+  font-size:12px;
+  margin-top:9px;
+}
+.badge.neu,.badge.offen { background:#72551b; }
+.badge.in_bearbeitung,.badge.angesehen { background:#254f72; }
+.badge.erledigt,.badge.angenommen,.badge.freigeschaltet {
+  background:var(--green);
+}
+.badge.abgelehnt { background:#702b2b; }
+.open-btn { width:100%; margin-top:12px; }
+.message {
+  padding:12px;
+  border-radius:10px;
+  margin:10px 0;
+  overflow-wrap:anywhere;
+}
+.error { background:var(--red); }
+.success { background:var(--green); }
+.detail-row { padding:10px 0; border-bottom:1px solid #393939; }
+.detail-label { color:var(--yellow); font-size:13px; font-weight:bold; }
+.detail-value { overflow-wrap:anywhere; }
+.actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; }
+.actions button { flex:1; min-width:130px; }
+.back { margin-bottom:14px; }
+.firm-actions { display:flex; gap:8px; margin-top:12px; }
+.firm-actions button { flex:1; }
+@media(max-width:560px) {
+  .wrap { padding:12px; }
+  .panel { padding:14px; }
+  .topbar { align-items:stretch; flex-direction:column; }
+  .topbar button { width:100%; }
+  .tools { grid-template-columns:1fr; }
+  .request-head { gap:6px; }
+  .request-service { font-size:17px; }
+  .request-date { max-width:110px; }
+  .tabs button { padding:11px 6px; font-size:14px; }
+  .actions,.firm-actions { flex-direction:column; }
+  .actions button,.firm-actions button { width:100%; }
 }
 </style>
 </head>
-
 <body>
 <div class="wrap">
+
   <h1>RIEMER <span class="brand">BAUCONNECT</span></h1>
-  <div class="subtitle">Verwaltungsbereich – Bauanfragen &amp; Fachbetriebe</div>
+  <div class="subtitle">Verwaltung – Bauanfragen und Fachbetriebe</div>
 
-  <div id="loginBox" class="card">
+  <section id="loginBox" class="panel">
     <h2>Admin-Login</h2>
-    <label for="email">E-Mail</label>
-    <input id="email" type="email" placeholder="E-Mail-Adresse" autocomplete="username">
-    <label for="password">Passwort</label>
-    <input id="password" type="password" placeholder="Passwort" autocomplete="current-password">
-    <button id="loginBtn">Anmelden</button>
-    <div id="loginMessage" aria-live="polite"></div>
-  </div>
+    <p class="muted">Bitte mit deinem Admin-Konto anmelden.</p>
 
-  <div id="adminBox" class="hidden">
+    <form id="loginForm">
+      <label for="email">E-Mail</label>
+      <input id="email" type="email" autocomplete="username"
+        required placeholder="E-Mail-Adresse">
+
+      <label for="password">Passwort</label>
+      <input id="password" type="password" autocomplete="current-password"
+        required placeholder="Passwort">
+
+      <button class="full" id="loginBtn" type="submit">Anmelden</button>
+    </form>
+
+    <div id="loginMessage" aria-live="polite"></div>
+  </section>
+
+  <main id="adminBox" class="hidden">
+
     <div class="topbar">
       <div>
-        <h2 style="margin:0">Verwaltung</h2>
-        <div class="small">Bauanfragen und registrierte Fachbetriebe</div>
+        <h2>Verwaltung</h2>
+        <div class="small">Anfragen finden und bearbeiten</div>
       </div>
-      <button id="logoutBtn" class="secondary">Abmelden</button>
+      <button id="logoutBtn" class="secondary" type="button">Abmelden</button>
     </div>
 
     <div class="tabs">
@@ -95,351 +212,501 @@ button.danger{background:#7b2929;color:#fff}
       <button id="firmsTab" type="button">Fachbetriebe</button>
     </div>
 
-    <section id="requestsSection" class="card">
-      <h2>Bauanfragen</h2>
-      <div class="small">Alle eingegangenen Kundenanfragen bearbeiten</div>
-      <button id="refreshRequestsBtn" style="margin-top:18px">Bauanfragen aktualisieren</button>
-      <div id="requestsMessage" aria-live="polite"></div>
-      <div id="requestList"></div>
+    <section id="requestsSection" class="panel">
+
+      <div id="requestListView">
+        <h2>Bauanfragen</h2>
+        <div class="small">
+          Anfrage antippen oder „Öffnen & bearbeiten“ auswählen.
+        </div>
+
+        <div class="tools">
+          <input id="searchRequests" type="search"
+            placeholder="Name, PLZ oder Leistung suchen"
+            aria-label="Bauanfragen suchen">
+
+          <select id="statusFilter" aria-label="Nach Status filtern">
+            <option value="">Alle Status</option>
+            <option value="neu">Neu</option>
+            <option value="angesehen">Angesehen</option>
+            <option value="kontakt">Kontakt aufgenommen</option>
+            <option value="in_bearbeitung">In Bearbeitung</option>
+            <option value="angebot">Angebot erstellt</option>
+            <option value="angenommen">Angenommen</option>
+            <option value="auftrag">Auftrag erteilt</option>
+            <option value="abgelehnt">Abgelehnt</option>
+            <option value="erledigt">Erledigt</option>
+          </select>
+        </div>
+
+        <button id="refreshRequestsBtn" class="secondary full" type="button">
+          Anfragen aktualisieren
+        </button>
+
+        <div id="requestsMessage" aria-live="polite"></div>
+        <div id="requestSummary" class="summary"></div>
+        <div id="requestList"></div>
+      </div>
 
       <div id="detailView" class="hidden">
-        <button id="backBtn" class="secondary back" style="margin-top:18px">
-          ← Zurück zu den Bauanfragen
+        <button id="backBtn" class="secondary back" type="button">
+          ← Zurück zur Anfragenliste
         </button>
-        <h2>Bauanfrage bearbeiten</h2>
+        <h2>Anfrage bearbeiten</h2>
+        <div id="detailIntro" class="summary"></div>
         <div id="detailContent"></div>
       </div>
+
     </section>
 
-    <section id="firmsSection" class="card hidden">
+    <section id="firmsSection" class="panel hidden">
       <h2>Fachbetriebe</h2>
-      <div class="small">Registrierte Firmen prüfen und Freischaltung verwalten.</div>
-      <button id="refreshFirmsBtn" style="margin-top:18px">Fachbetriebe aktualisieren</button>
+      <div class="small">Registrierte Firmen und Freischaltungen verwalten.</div>
+
+      <button id="refreshFirmsBtn" class="secondary full"
+        style="margin-top:12px" type="button">
+        Fachbetriebe aktualisieren
+      </button>
+
       <div id="firmsMessage" aria-live="polite"></div>
       <div id="firmList"></div>
     </section>
-  </div>
+
+  </main>
 </div>
 
 <script>
 const SUPABASE_URL = "https://ehzugjmltfcvllftpjpp.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Ieo0pxh7y8L4nr2xMS7fQQ_mPonnlOm";
-
 const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const loginBox = document.getElementById("loginBox");
-const adminBox = document.getElementById("adminBox");
-const loginMessage = document.getElementById("loginMessage");
-const requestsMessage = document.getElementById("requestsMessage");
-const firmsMessage = document.getElementById("firmsMessage");
-const requestList = document.getElementById("requestList");
-const firmList = document.getElementById("firmList");
-const detailView = document.getElementById("detailView");
-const detailContent = document.getElementById("detailContent");
-const requestsSection = document.getElementById("requestsSection");
-const firmsSection = document.getElementById("firmsSection");
-const requestsTab = document.getElementById("requestsTab");
-const firmsTab = document.getElementById("firmsTab");
+const $ = id => document.getElementById(id);
 
+let allRequests = [];
 let currentRequest = null;
-let requestCache = [];
 
-function showError(element, message) {
-  element.innerHTML = '<div class="error">' + escapeHtml(message) + '</div>';
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
 }
 
-function showSuccess(element, message) {
-  element.innerHTML = '<div class="success">' + escapeHtml(message) + '</div>';
+function formatDate(value) {
+  if (!value) return "Datum unbekannt";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleString("de-DE", {
+    dateStyle:"short",
+    timeStyle:"short"
+  });
 }
 
-async function login() {
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value;
-
-  loginMessage.innerHTML = "";
-
-  if (!email || !password) {
-    showError(loginMessage, "Bitte E-Mail und Passwort eingeben.");
-    return;
-  }
-
-  const { error } = await client.auth.signInWithPassword({ email, password });
-
-  if (error) {
-    showError(loginMessage, error.message);
-    return;
-  }
-
-  await updateUI();
+function statusLabel(value) {
+  const labels = {
+    neu:"Neu",
+    offen:"Offen",
+    angesehen:"Angesehen",
+    kontakt:"Kontakt aufgenommen",
+    in_bearbeitung:"In Bearbeitung",
+    angebot:"Angebot erstellt",
+    angenommen:"Angenommen",
+    auftrag:"Auftrag erteilt",
+    abgelehnt:"Abgelehnt",
+    erledigt:"Erledigt"
+  };
+  return labels[value] || value || "Neu";
 }
 
-async function logout() {
-  await client.auth.signOut();
-  currentRequest = null;
-  await updateUI();
+function showMessage(element, text, type="success") {
+  element.innerHTML = text
+    ? `<div class="message ${type}">${escapeHtml(text)}</div>`
+    : "";
 }
 
 async function updateUI() {
-  const { data, error } = await client.auth.getSession();
+  const {data,error} = await client.auth.getSession();
 
   if (error) {
-    showError(loginMessage, "Sitzung konnte nicht geprüft werden: " + error.message);
+    showMessage($("loginMessage"),error.message,"error");
     return;
   }
 
-  if (data.session) {
-    loginBox.classList.add("hidden");
-    adminBox.classList.remove("hidden");
-    await showSection("requests");
-  } else {
-    loginBox.classList.remove("hidden");
-    adminBox.classList.add("hidden");
+  const signedIn = !!data.session;
+  $("loginBox").classList.toggle("hidden",signedIn);
+  $("adminBox").classList.toggle("hidden",!signedIn);
+
+  if (signedIn) {
+    showSection("requests");
   }
 }
 
-async function showSection(section) {
-  const showRequests = section === "requests";
+async function login(event) {
+  event.preventDefault();
 
-  requestsSection.classList.toggle("hidden", !showRequests);
-  firmsSection.classList.toggle("hidden", showRequests);
-  requestsTab.classList.toggle("active", showRequests);
-  firmsTab.classList.toggle("active", !showRequests);
+  $("loginBtn").disabled = true;
+  $("loginBtn").textContent = "Anmeldung läuft …";
+  showMessage($("loginMessage"),"");
 
-  if (showRequests) {
-    await loadRequests();
-  } else {
-    await loadFirms();
+  try {
+    const {error} = await client.auth.signInWithPassword({
+      email:$("email").value.trim(),
+      password:$("password").value
+    });
+
+    if (error) {
+      showMessage($("loginMessage"),error.message,"error");
+    } else {
+      await updateUI();
+    }
+  } catch (error) {
+    showMessage($("loginMessage"),error.message || "Anmeldung fehlgeschlagen.","error");
+  } finally {
+    $("loginBtn").disabled = false;
+    $("loginBtn").textContent = "Anmelden";
   }
 }
 
+async function logout() {
+  const {error} = await client.auth.signOut();
+
+  if (error) {
+    showMessage($("requestsMessage"),error.message,"error");
+  }
+
+  await updateUI();
+}
+
+function showSection(section) {
+  const requests = section === "requests";
+
+  $("requestsSection").classList.toggle("hidden",!requests);
+  $("firmsSection").classList.toggle("hidden",requests);
+  $("requestsTab").classList.toggle("active",requests);
+  $("firmsTab").classList.toggle("active",!requests);
+
+  if (requests) {
+    loadRequests();
+  } else {
+    loadFirms();
+  }
+}
+
+/* BAUANFRAGEN LADEN */
 async function loadRequests() {
-  requestsMessage.innerHTML = "";
-  requestList.innerHTML = '<div class="small">Bauanfragen werden geladen …</div>';
+  showMessage($("requestsMessage"),"Anfragen werden geladen …");
+  $("requestList").innerHTML = "";
+  $("requestSummary").textContent = "";
 
-  const { data, error } = await client
-    .from("Bauanfragen")
-    .select("*")
-    .order("created_at", { ascending: false });
+  try {
+    // Bestehenden Tabellennamen beibehalten.
+    const {data,error} = await client
+      .from("Bauanfragen")
+      .select("*")
+      .order("created_at",{ascending:false});
 
-  if (error) {
-    requestList.innerHTML = "";
-    showError(
-      requestsMessage,
-      "Bauanfragen konnten nicht geladen werden: " + error.message
+    if (error) {
+      showMessage(
+        $("requestsMessage"),
+        "Bauanfragen konnten nicht geladen werden: " + error.message,
+        "error"
+      );
+      return;
+    }
+
+    allRequests = data || [];
+    showMessage($("requestsMessage"),"");
+    renderRequests();
+
+  } catch (error) {
+    showMessage(
+      $("requestsMessage"),
+      "Fehler beim Laden: " + (error.message || "Unbekannter Fehler"),
+      "error"
     );
-    return;
   }
-
-  requestCache = data || [];
-  renderRequests(requestCache);
 }
 
-function renderRequests(data) {
-  requestList.innerHTML = "";
-  requestsMessage.innerHTML = "";
+/* SUCHE UND FILTER */
+function renderRequests() {
+  const query = $("searchRequests").value.trim().toLocaleLowerCase("de");
+  const status = $("statusFilter").value;
 
-  if (!data.length) {
-    requestList.innerHTML =
-      '<div class="success">Noch keine Bauanfragen vorhanden.</div>';
+  const filtered = allRequests.filter(row => {
+    const values = [
+      row.service,row.plz,row.area,row.description,
+      row.name,row.phone,row.email,row.status
+    ];
+
+    const haystack = values.join(" ").toLocaleLowerCase("de");
+    const matchesSearch = !query || haystack.includes(query);
+    const matchesStatus = !status || (row.status || "neu") === status;
+
+    return matchesSearch && matchesStatus;
+  });
+
+  $("requestSummary").textContent =
+    `${filtered.length} von ${allRequests.length} Anfragen`;
+
+  $("requestList").innerHTML = "";
+
+  if (!filtered.length) {
+    $("requestList").innerHTML =
+      '<div class="message">Keine passenden Anfragen gefunden.</div>';
     return;
   }
 
-  data.forEach(row => {
+  filtered.forEach(row => {
     const item = document.createElement("article");
+
     item.className = "request";
     item.tabIndex = 0;
-    item.setAttribute("role", "button");
-    item.setAttribute("aria-label", "Bauanfrage öffnen: " + (row.service || "Anfrage"));
+    item.setAttribute("role","button");
+    item.setAttribute(
+      "aria-label",
+      "Anfrage öffnen und bearbeiten"
+    );
 
     item.innerHTML = `
-      <div class="request-title">
-        <div class="request-service">${escapeHtml(row.service || "Sonstige Anfrage")}</div>
-        <div class="request-date">${escapeHtml(formatDate(row.created_at))}</div>
+      <div class="request-head">
+        <div class="request-service">
+          ${escapeHtml(row.service || "Sonstige Anfrage")}
+        </div>
+        <div class="request-date">
+          ${escapeHtml(formatDate(row.created_at))}
+        </div>
       </div>
-      <div class="request-info">📍 ${escapeHtml(row.plz || "")}${row.area ? " – " + escapeHtml(row.area) : ""}</div>
-      <div class="request-info">👤 ${escapeHtml(row.name || "Kein Name")}</div>
-      <div class="request-info">📞 ${escapeHtml(row.phone || "Keine Telefonnummer")}</div>
-      <div class="badge">${escapeHtml(row.status || "offen")}</div>
-      <div class="small">Antippen, um die Anfrage zu öffnen und zu bearbeiten</div>
+
+      <div class="request-meta">
+        👤 ${escapeHtml(row.name || "Kein Name angegeben")}
+      </div>
+
+      <div class="request-meta">
+        📍 ${escapeHtml(
+          [row.plz,row.area].filter(Boolean).join(" – ") ||
+          "Kein Ort angegeben"
+        )}
+      </div>
+
+      <div class="request-meta">
+        📞 ${escapeHtml(row.phone || "Keine Telefonnummer")}
+      </div>
+
+      <span class="badge ${escapeHtml(row.status || "neu")}">
+        ${escapeHtml(statusLabel(row.status || "neu"))}
+      </span>
+
+      <button type="button" class="open-btn">
+        Öffnen &amp; bearbeiten →
+      </button>
     `;
 
-    item.addEventListener("click", () => showDetail(row));
-    item.addEventListener("keydown", event => {
-      if (event.key === "Enter" || event.key === " ") {
+    // Die ganze Karte ist anklickbar.
+    item.addEventListener("click",() => showDetail(row));
+
+    item.addEventListener("keydown",event => {
+      if (
+        (event.key === "Enter" || event.key === " ") &&
+        event.target === item
+      ) {
         event.preventDefault();
         showDetail(row);
       }
     });
 
-    requestList.appendChild(item);
+    // Der sichtbare Button funktioniert unabhängig von der Karte.
+    item.querySelector(".open-btn").addEventListener("click",event => {
+      event.stopPropagation();
+      showDetail(row);
+    });
+
+    $("requestList").appendChild(item);
   });
 }
 
+/* BEARBEITUNGSFORMULAR */
 function showDetail(row) {
   currentRequest = row;
-  detailView.classList.remove("hidden");
+
+  $("requestListView").classList.add("hidden");
+  $("detailView").classList.remove("hidden");
+
+  $("detailIntro").textContent =
+    `Anfrage vom ${formatDate(row.created_at)} · ID: ${row.id ?? "nicht vorhanden"}`;
 
   const statuses = [
-    ["neu", "Neu"],
-    ["offen", "Offen"],
-    ["kontakt", "Kontakt aufgenommen"],
-    ["in_bearbeitung", "In Bearbeitung"],
-    ["angebot", "Angebot erstellt"],
-    ["auftrag", "Auftrag erteilt"],
-    ["erledigt", "Erledigt"]
+    ["neu","Neu"],
+    ["angesehen","Angesehen"],
+    ["kontakt","Kontakt aufgenommen"],
+    ["in_bearbeitung","In Bearbeitung"],
+    ["angebot","Angebot erstellt"],
+    ["angenommen","Angenommen"],
+    ["auftrag","Auftrag erteilt"],
+    ["abgelehnt","Abgelehnt"],
+    ["erledigt","Erledigt"]
   ];
 
-  const currentStatus = String(row.status || "offen");
+  const currentStatus = String(row.status || "neu");
 
   if (!statuses.some(option => option[0] === currentStatus)) {
-    statuses.push([currentStatus, currentStatus]);
+    statuses.push([currentStatus,currentStatus]);
   }
 
-  const statusOptions = statuses.map(([value, label]) => `
+  const options = statuses.map(([value,label]) => `
     <option value="${escapeHtml(value)}"
       ${value === currentStatus ? "selected" : ""}>
       ${escapeHtml(label)}
     </option>
   `).join("");
 
-  detailContent.innerHTML = `
-    <form id="requestEditForm" class="detail">
-      <div class="detail-row">
-        <div class="detail-label">Leistung</div>
-        <input name="service" required value="${escapeHtml(row.service || "")}">
-      </div>
+  $("detailContent").innerHTML = `
+    <form id="requestEditForm">
 
-      <div class="detail-row">
-        <div class="detail-label">Erstellungsdatum</div>
-        <div class="detail-value">${escapeHtml(formatDate(row.created_at))}</div>
-      </div>
+      <label for="editService">Leistung / Anfrage</label>
+      <input id="editService" name="service" required
+        value="${escapeHtml(row.service || "")}">
 
-      <div class="detail-row">
-        <div class="detail-label">PLZ</div>
-        <input name="plz" value="${escapeHtml(row.plz || "")}">
-      </div>
+      <label for="editName">Kundenname</label>
+      <input id="editName" name="name" required
+        value="${escapeHtml(row.name || "")}">
 
-      <div class="detail-row">
-        <div class="detail-label">Gebiet / Ort</div>
-        <input name="area" value="${escapeHtml(row.area || "")}">
-      </div>
+      <label for="editPlz">PLZ</label>
+      <input id="editPlz" name="plz"
+        value="${escapeHtml(row.plz || "")}">
 
-      <div class="detail-row">
-        <div class="detail-label">Beschreibung</div>
-        <textarea name="description">${escapeHtml(row.description || "")}</textarea>
-      </div>
+      <label for="editArea">Ort / Fläche / Umfang</label>
+      <input id="editArea" name="area"
+        value="${escapeHtml(row.area || "")}">
 
-      <div class="detail-row">
-        <div class="detail-label">Kunde</div>
-        <input name="name" required value="${escapeHtml(row.name || "")}">
-      </div>
+      <label for="editPhone">Telefon</label>
+      <input id="editPhone" name="phone" type="tel"
+        value="${escapeHtml(row.phone || "")}">
 
-      <div class="detail-row">
-        <div class="detail-label">Telefon</div>
-        <input name="phone" type="tel" value="${escapeHtml(row.phone || "")}">
-      </div>
+      <label for="editEmail">E-Mail</label>
+      <input id="editEmail" name="email" type="email"
+        value="${escapeHtml(row.email || "")}">
 
-      <div class="detail-row">
-        <div class="detail-label">E-Mail</div>
-        <input name="email" type="email" value="${escapeHtml(row.email || "")}">
-      </div>
+      <label for="editDescription">Beschreibung</label>
+      <textarea id="editDescription" name="description">${escapeHtml(row.description || "")}</textarea>
 
-      <div class="detail-row">
-        <div class="detail-label">Status ändern</div>
-        <select name="status">${statusOptions}</select>
-      </div>
+      <label for="editStatus">Bearbeitungsstatus</label>
+      <select id="editStatus" name="status">
+        ${options}
+      </select>
 
-      <div class="edit-actions">
-        <button type="submit" id="saveRequestBtn">Änderungen speichern</button>
-        <button type="button" class="secondary" id="cancelEditBtn">Abbrechen</button>
+      <div class="actions">
+        <button id="saveRequestBtn" type="submit">
+          Änderungen speichern
+        </button>
+        <button id="cancelEditBtn" class="secondary" type="button">
+          Zurück ohne Speichern
+        </button>
       </div>
 
       <div id="editMessage" aria-live="polite"></div>
     </form>
   `;
 
-  document.getElementById("cancelEditBtn").addEventListener("click", () => {
-    detailView.classList.add("hidden");
-    currentRequest = null;
+  $("cancelEditBtn").addEventListener("click",showList);
+
+  $("requestEditForm").addEventListener("submit",saveRequest);
+
+  $("detailView").scrollIntoView({
+    behavior:"smooth",
+    block:"start"
   });
-
-  document.getElementById("requestEditForm").addEventListener("submit", saveRequest);
-
-  detailView.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+function showList() {
+  $("detailView").classList.add("hidden");
+  $("requestListView").classList.remove("hidden");
+  currentRequest = null;
+}
+
+/* ÄNDERUNGEN SPEICHERN */
 async function saveRequest(event) {
   event.preventDefault();
 
-  const row = currentRequest;
-  const form = event.currentTarget;
-  const message = document.getElementById("editMessage");
-  const button = document.getElementById("saveRequestBtn");
-
-  if (!row || row.id == null) {
-    showError(message, "Die Anfrage hat keine erkennbare ID. Speichern nicht möglich.");
+  if (!currentRequest || currentRequest.id == null) {
+    showMessage(
+      $("editMessage"),
+      "Diese Anfrage hat keine ID. Speichern ist nicht möglich.",
+      "error"
+    );
     return;
   }
 
-  const formData = new FormData(form);
-
-  const changes = {
-    service: String(formData.get("service") || "").trim(),
-    plz: String(formData.get("plz") || "").trim(),
-    area: String(formData.get("area") || "").trim(),
-    description: String(formData.get("description") || "").trim(),
-    name: String(formData.get("name") || "").trim(),
-    phone: String(formData.get("phone") || "").trim(),
-    email: String(formData.get("email") || "").trim(),
-    status: String(formData.get("status") || "offen")
-  };
-
+  const button = $("saveRequestBtn");
   button.disabled = true;
   button.textContent = "Speichert …";
-  message.innerHTML = "";
+
+  showMessage($("editMessage"),"");
+
+  const form = new FormData(event.currentTarget);
+
+  const changes = {
+    service:String(form.get("service") || "").trim(),
+    name:String(form.get("name") || "").trim(),
+    plz:String(form.get("plz") || "").trim(),
+    area:String(form.get("area") || "").trim() || null,
+    phone:String(form.get("phone") || "").trim(),
+    email:String(form.get("email") || "").trim() || null,
+    description:String(form.get("description") || "").trim() || null,
+    status:String(form.get("status") || "neu")
+  };
 
   try {
-    const { data, error } = await client
+    // Gleiche Tabelle und ID-Spalte wie bei der bisherigen Verwaltung.
+    const {data,error} = await client
       .from("Bauanfragen")
       .update(changes)
-      .eq("id", row.id)
-      .select();
+      .eq("id",currentRequest.id)
+      .select("id");
 
     if (error) {
-      showError(message, "Speichern fehlgeschlagen: " + error.message);
-      return;
-    }
-
-    if (!data || data.length === 0) {
-      showError(
-        message,
-        "Es wurde keine Zeile aktualisiert. Prüfe die Supabase-RLS-Regeln und die Berechtigung zum Ändern von Bauanfragen."
+      showMessage(
+        $("editMessage"),
+        "Speichern fehlgeschlagen: " + error.message,
+        "error"
       );
       return;
     }
 
-    const savedRow = data[0];
-    currentRequest = savedRow;
-
-    const index = requestCache.findIndex(item => String(item.id) === String(savedRow.id));
-
-    if (index !== -1) {
-      requestCache[index] = savedRow;
+    // Keine zurückgegebene Zeile kann auf RLS oder Berechtigungen hinweisen.
+    if (!data || data.length === 0) {
+      showMessage(
+        $("editMessage"),
+        "Es wurde keine Anfrage geändert. Bitte die UPDATE-Berechtigungen (RLS) in Supabase prüfen.",
+        "error"
+      );
+      return;
     }
 
-    renderRequests(requestCache);
-    showDetail(savedRow);
+    const updated = {...currentRequest,...changes};
 
-    const newMessage = document.getElementById("editMessage");
-    showSuccess(newMessage, "Änderungen wurden gespeichert.");
+    // Liste neu laden und Detailansicht offen halten.
+    await loadRequests();
+
+    currentRequest = updated;
+    showDetail(updated);
+
+    showMessage(
+      $("editMessage"),
+      "Änderungen wurden gespeichert.",
+      "success"
+    );
 
   } catch (error) {
-    showError(
-      message,
-      "Fehler beim Speichern: " + (error.message || "Unbekannter Fehler")
+    showMessage(
+      $("editMessage"),
+      "Fehler beim Speichern: " +
+      (error.message || "Unbekannter Fehler"),
+      "error"
     );
   } finally {
-    const currentButton = document.getElementById("saveRequestBtn");
+    const currentButton = $("saveRequestBtn");
 
     if (currentButton) {
       currentButton.disabled = false;
@@ -448,149 +715,173 @@ async function saveRequest(event) {
   }
 }
 
-function showList() {
-  detailView.classList.add("hidden");
-  currentRequest = null;
-}
-
+/* FACHBETRIEBE */
 async function loadFirms() {
-  firmsMessage.innerHTML = "";
-  firmList.innerHTML = '<div class="small">Fachbetriebe werden geladen …</div>';
+  showMessage($("firmsMessage"),"Fachbetriebe werden geladen …");
+  $("firmList").innerHTML = "";
 
-  const { data, error } = await client
-    .from("fachbetriebe")
-    .select("*")
-    .order("created_at", { ascending: false });
+  try {
+    const {data,error} = await client
+      .from("fachbetriebe")
+      .select("*")
+      .order("created_at",{ascending:false});
 
-  if (error) {
-    firmList.innerHTML = "";
-    showError(
-      firmsMessage,
-      "Fachbetriebe konnten nicht geladen werden: " + error.message +
-      " Bitte Tabelle, Spalten und Supabase-RLS-Berechtigungen prüfen."
-    );
-    return;
-  }
+    if (error) {
+      showMessage(
+        $("firmsMessage"),
+        "Fachbetriebe konnten nicht geladen werden: " + error.message,
+        "error"
+      );
+      return;
+    }
 
-  firmsMessage.innerHTML = "";
-  firmList.innerHTML = "";
+    showMessage($("firmsMessage"),"");
 
-  if (!data || data.length === 0) {
-    firmList.innerHTML =
-      '<div class="success">Keine Fachbetriebe in der Tabelle „fachbetriebe“ gefunden.</div>';
-    return;
-  }
+    if (!data || data.length === 0) {
+      $("firmList").innerHTML =
+        '<div class="message">Keine Fachbetriebe gefunden.</div>';
+      return;
+    }
 
-  data.forEach(firm => {
-    const isApproved = firm.freigeschaltet === true;
-    const item = document.createElement("article");
-    item.className = "firm";
+    data.forEach(firm => {
+      const approved = firm.freigeschaltet === true;
+      const item = document.createElement("article");
 
-    item.innerHTML = `
-      <div class="firm-title">
-        <div class="firm-name">${escapeHtml(firm.firma || firm.firmenname || "Firma ohne Namen")}</div>
-        <span class="badge ${isApproved ? "approved" : "pending"}">
-          ${isApproved ? "Freigeschaltet" : "Wartet auf Freischaltung"}
-        </span>
-      </div>
+      item.className = "firm";
 
-      <div class="firm-info">👤 Ansprechpartner: ${escapeHtml(firm.inhaber || firm.ansprechpartner || "Keine Angabe")}</div>
-      <div class="firm-info">✉️ ${escapeHtml(firm.email || "Keine E-Mail")}</div>
-      <div class="firm-info">📞 ${escapeHtml(firm.telefon || "Keine Telefonnummer")}</div>
-      <div class="firm-info">📍 ${escapeHtml([firm.plz, firm.ort].filter(Boolean).join(" ") || "Kein Ort angegeben")}</div>
-      <div class="firm-info">🛠️ Leistungen: ${escapeHtml(formatLeistungen(firm.leistungen))}</div>
-      <div class="firm-info">Umkreis: ${escapeHtml(firm.radius_km == null ? "Keine Angabe" : String(firm.radius_km) + " km")}</div>
-      <div class="firm-info">Abo-Status: ${escapeHtml(firm.abo_status || "unbekannt")}</div>
+      const services = Array.isArray(firm.leistungen)
+        ? firm.leistungen.join(", ")
+        : (firm.leistungen || "Keine Leistungen angegeben");
 
-      <div class="firm-actions">
-        <button type="button" data-action="approval">
-          ${isApproved ? "Freischaltung zurücknehmen" : "Betrieb freischalten"}
-        </button>
-      </div>
-    `;
+      item.innerHTML = `
+        <div class="request-head">
+          <div class="firm-name">
+            ${escapeHtml(firm.firma || firm.firmenname || "Firma ohne Namen")}
+          </div>
+          <span class="badge ${approved ? "freigeschaltet" : "neu"}">
+            ${approved ? "Freigeschaltet" : "Wartet auf Freischaltung"}
+          </span>
+        </div>
 
-    item.querySelector('[data-action="approval"]').addEventListener("click", event => {
-      setFirmApproval(firm.id, !isApproved, event.currentTarget);
+        <div class="request-meta">
+          👤 ${escapeHtml(firm.inhaber || firm.ansprechpartner || "Kein Ansprechpartner")}
+        </div>
+
+        <div class="request-meta">
+          ✉️ ${escapeHtml(firm.email || "Keine E-Mail")}
+        </div>
+
+        <div class="request-meta">
+          📞 ${escapeHtml(firm.telefon || "Keine Telefonnummer")}
+        </div>
+
+        <div class="request-meta">
+          📍 ${escapeHtml([firm.plz,firm.ort].filter(Boolean).join(" ") || "Kein Ort angegeben")}
+        </div>
+
+        <div class="request-meta">
+          🛠️ ${escapeHtml(services)}
+        </div>
+
+        <div class="request-meta">
+          Abo-Status: ${escapeHtml(firm.abo_status || "unbekannt")}
+        </div>
+
+        <div class="firm-actions">
+          <button type="button">
+            ${approved ? "Freischaltung zurücknehmen" : "Betrieb freischalten"}
+          </button>
+        </div>
+      `;
+
+      item.querySelector("button").addEventListener("click",event => {
+        setFirmApproval(firm.id,!approved,event.currentTarget);
+      });
+
+      $("firmList").appendChild(item);
     });
 
-    firmList.appendChild(item);
-  });
+  } catch (error) {
+    showMessage(
+      $("firmsMessage"),
+      "Fehler beim Laden: " + (error.message || "Unbekannter Fehler"),
+      "error"
+    );
+  }
 }
 
-async function setFirmApproval(firmId, approved, button) {
-  if (firmId == null) {
-    showError(firmsMessage, "Dieser Betrieb hat keine ID. Bitte die Tabellenstruktur prüfen.");
+async function setFirmApproval(id,approved,button) {
+  if (id == null) {
+    showMessage($("firmsMessage"),"Dieser Betrieb hat keine ID.","error");
     return;
   }
 
-  const confirmation = approved
+  const question = approved
     ? "Diesen Fachbetrieb freischalten?"
-    : "Die Freischaltung dieses Fachbetriebs zurücknehmen?";
+    : "Freischaltung dieses Fachbetriebs zurücknehmen?";
 
-  if (!window.confirm(confirmation)) return;
+  if (!confirm(question)) return;
 
   button.disabled = true;
-  firmsMessage.innerHTML = "";
 
-  const { error } = await client
-    .from("fachbetriebe")
-    .update({ freigeschaltet: approved })
-    .eq("id", firmId);
+  try {
+    const {data,error} = await client
+      .from("fachbetriebe")
+      .update({freigeschaltet:approved})
+      .eq("id",id)
+      .select("id");
 
-  if (error) {
-    showError(firmsMessage, "Änderung fehlgeschlagen: " + error.message);
-    button.disabled = false;
-    return;
+    if (error) {
+      showMessage(
+        $("firmsMessage"),
+        "Änderung fehlgeschlagen: " + error.message,
+        "error"
+      );
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      showMessage(
+        $("firmsMessage"),
+        "Es wurde nichts geändert. Bitte die UPDATE-RLS-Berechtigung in Supabase prüfen.",
+        "error"
+      );
+      return;
+    }
+
+    showMessage(
+      $("firmsMessage"),
+      approved
+        ? "Fachbetrieb wurde freigeschaltet."
+        : "Freischaltung wurde zurückgenommen."
+    );
+
+    await loadFirms();
+
+  } catch (error) {
+    showMessage(
+      $("firmsMessage"),
+      "Fehler: " + (error.message || "Unbekannter Fehler"),
+      "error"
+    );
+  } finally {
+    if (button.isConnected) button.disabled = false;
   }
-
-  showSuccess(
-    firmsMessage,
-    approved ? "Fachbetrieb wurde freigeschaltet." : "Freischaltung wurde zurückgenommen."
-  );
-
-  await loadFirms();
 }
 
-function formatLeistungen(value) {
-  if (Array.isArray(value)) return value.join(", ");
-  if (value == null || value === "") return "Keine Angabe";
-  return String(value);
-}
+/* BUTTONS UND FILTER */
+$("loginForm").addEventListener("submit",login);
+$("logoutBtn").addEventListener("click",logout);
+$("refreshRequestsBtn").addEventListener("click",loadRequests);
+$("refreshFirmsBtn").addEventListener("click",loadFirms);
+$("backBtn").addEventListener("click",showList);
+$("requestsTab").addEventListener("click",() => showSection("requests"));
+$("firmsTab").addEventListener("click",() => showSection("firms"));
+$("searchRequests").addEventListener("input",renderRequests);
+$("statusFilter").addEventListener("change",renderRequests);
 
-function formatDate(value) {
-  if (!value) return "";
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) return "";
-
-  return date.toLocaleString("de-DE", {
-    dateStyle: "short",
-    timeStyle: "medium"
-  });
-}
-
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-document.getElementById("loginBtn").addEventListener("click", login);
-document.getElementById("logoutBtn").addEventListener("click", logout);
-document.getElementById("refreshRequestsBtn").addEventListener("click", loadRequests);
-document.getElementById("refreshFirmsBtn").addEventListener("click", loadFirms);
-document.getElementById("backBtn").addEventListener("click", showList);
-
-requestsTab.addEventListener("click", () => showSection("requests"));
-firmsTab.addEventListener("click", () => showSection("firms"));
-
-client.auth.onAuthStateChange((event, session) => {
-  if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "TOKEN_REFRESHED") {
-    setTimeout(() => updateUI(), 0);
-  }
+client.auth.onAuthStateChange(() => {
+  updateUI();
 });
 
 updateUI();
