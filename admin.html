@@ -1,198 +1,684 @@
+
 <!doctype html>
 <html lang="de">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Riemer BauConnect – Admin</title>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#171717;color:#fff;font-family:Arial,sans-serif}
-.wrap{max-width:950px;margin:auto;padding:20px}
-h1{margin:0 0 6px;font-size:28px}.yellow{color:#ffd400}
+body{
+  margin:0;background:#171717;color:#fff;
+  font-family:Arial,sans-serif
+}
+.wrap{max-width:1100px;margin:auto;padding:18px}
+h1{margin:0 0 6px;font-size:25px}
+h2{font-size:20px}
+h3{margin-top:0}
+.yellow{color:#ffd400}
 .small{color:#aaa;margin-bottom:18px}
-.card{background:#222;border:1px solid #3a3a3a;border-radius:14px;padding:18px;margin-bottom:18px}
-input,button{width:100%;padding:13px;border-radius:9px;font-size:16px}
-input{background:#111;color:#fff;border:1px solid #555;margin:6px 0 10px}
-button{border:0;background:#ffd400;color:#111;font-weight:700;margin-top:6px}
+.card{
+  background:#222;border:1px solid #3a3a3a;
+  border-radius:14px;padding:16px;margin-bottom:18px
+}
+input,button{
+  width:100%;padding:13px;border-radius:9px;
+  font-size:16px
+}
+input{
+  background:#111;color:#fff;border:1px solid #555;
+  margin:6px 0 10px
+}
+button{
+  border:0;background:#ffd400;color:#111;
+  font-weight:700;margin-top:6px;cursor:pointer
+}
 button.secondary{background:#333;color:#fff}
-button.danger{background:#a52a2a;color:#fff}
-.hidden{display:none}.error{background:#5a2020;padding:12px;border-radius:9px;margin-top:10px}
-.success{background:#245b2d;padding:12px;border-radius:9px;margin-top:10px}
-.tablewrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse;min-width:760px}
-th,td{text-align:left;padding:10px;border-bottom:1px solid #3a3a3a;vertical-align:top}
-th{color:#ffd400}.muted{color:#aaa}
-.badge{display:inline-block;padding:4px 8px;border-radius:20px;background:#333}
-.top{display:flex;gap:10px;justify-content:space-between;align-items:center}
+button:disabled{opacity:.5}
+.hidden{display:none!important}
+.error{
+  background:#5a2020;padding:12px;border-radius:9px;
+  margin:10px 0;overflow-wrap:anywhere
+}
+.success{
+  background:#245b2d;padding:12px;border-radius:9px;
+  margin:10px 0
+}
+.muted{color:#aaa}
+.top{
+  display:flex;gap:10px;justify-content:space-between;
+  align-items:center
+}
 .top button{width:auto;padding:10px 16px}
+.stats{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;margin-bottom:18px
+}
+.stat{
+  background:#222;border:1px solid #3a3a3a;
+  border-radius:12px;padding:14px
+}
+.stat strong{display:block;font-size:25px;color:#ffd400}
+.stat span{font-size:13px;color:#bbb}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.tabs button{width:auto;margin:0;padding:12px}
+.tabs button.active{background:#ffd400;color:#111}
+.tablewrap{overflow-x:auto}
+table{
+  width:100%;border-collapse:collapse;
+  min-width:760px
+}
+th,td{
+  text-align:left;padding:10px;
+  border-bottom:1px solid #3a3a3a;
+  vertical-align:top;overflow-wrap:anywhere
+}
+th{color:#ffd400}
+.badge{
+  display:inline-block;padding:4px 8px;
+  border-radius:20px;background:#333
+}
+.section-title{
+  display:flex;justify-content:space-between;
+  align-items:center;gap:10px;flex-wrap:wrap
+}
+.section-title button{width:auto}
+@media(max-width:600px){
+  .wrap{padding:12px}
+  h1{font-size:21px}
+  .stats{grid-template-columns:1fr}
+}
 </style>
 </head>
+
 <body>
 <div class="wrap">
+
   <div class="top">
     <div>
       <h1>RIEMER <span class="yellow">BAUCONNECT</span></h1>
-      <div class="small">Verwaltungsbereich – Bauanfragen</div>
+      <div class="small">Admin – Verwaltung und Freischaltungen</div>
     </div>
-    <button id="logoutBtn" class="secondary hidden">Abmelden</button>
+    <button id="logoutBtn" class="secondary hidden">
+      Abmelden
+    </button>
   </div>
 
+  <!-- LOGIN -->
   <section id="loginCard" class="card">
     <h2>Admin-Login</h2>
-    <label>E-Mail</label>
-    <input id="email" type="email" autocomplete="username" placeholder="Deine Admin-E-Mail">
-    <label>Passwort</label>
-    <input id="password" type="password" autocomplete="current-password" placeholder="Dein Passwort">
+
+    <label for="email">E-Mail</label>
+    <input id="email" type="email"
+      autocomplete="username"
+      placeholder="Deine Admin-E-Mail">
+
+    <label for="password">Passwort</label>
+    <input id="password" type="password"
+      autocomplete="current-password"
+      placeholder="Dein Passwort">
+
     <button id="loginBtn">Anmelden</button>
-    <div id="loginMsg"></div>
+    <div id="loginMsg" aria-live="polite"></div>
   </section>
 
-  <section id="adminCard" class="card hidden">
-    <div class="top">
-      <h2>Bauanfragen</h2>
-      <button id="refreshBtn" class="secondary">Aktualisieren</button>
+  <!-- ADMIN -->
+  <main id="adminCard" class="hidden">
+
+    <div class="stats">
+      <div class="stat">
+        <strong id="countRequests">–</strong>
+        <span>Bauanfragen</span>
+      </div>
+      <div class="stat">
+        <strong id="countFachbetriebe">–</strong>
+        <span>Fachbetriebe</span>
+      </div>
+      <div class="stat">
+        <strong id="countPartner">–</strong>
+        <span>Partnerbewerbungen</span>
+      </div>
     </div>
-    <div id="adminMsg"></div>
-    <div class="tablewrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Datum</th>
-            <th>Leistung</th>
-            <th>PLZ</th>
-            <th>Ort</th>
-            <th>Name</th>
-            <th>Telefon</th>
-            <th>E-Mail</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody id="requestsBody">
-          <tr><td colspan="8" class="muted">Noch keine Daten geladen.</td></tr>
-        </tbody>
-      </table>
+
+    <div class="tabs">
+      <button class="active" data-section="requestsSection">
+        Bauanfragen
+      </button>
+      <button data-section="fachSection">
+        Fachbetriebe
+      </button>
+      <button data-section="partnerSection">
+        Partnerbewerbungen
+      </button>
     </div>
-  </section>
+
+    <div id="globalMsg" aria-live="polite"></div>
+
+    <!-- BAUANFRAGEN -->
+    <section id="requestsSection" class="card">
+      <div class="section-title">
+        <h2>Bauanfragen</h2>
+        <button class="secondary" id="refreshRequests">
+          Aktualisieren
+        </button>
+      </div>
+
+      <div id="requestsMsg"></div>
+
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Datum</th>
+              <th>Leistung / Beschreibung</th>
+              <th>PLZ</th>
+              <th>Ort</th>
+              <th>Name</th>
+              <th>Telefon</th>
+              <th>E-Mail</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="requestsBody">
+            <tr><td colspan="8">Noch nicht geladen.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- FACHBETRIEBE -->
+    <section id="fachSection" class="card hidden">
+      <div class="section-title">
+        <h2>Registrierte Fachbetriebe</h2>
+        <button class="secondary" id="refreshFach">
+          Aktualisieren
+        </button>
+      </div>
+
+      <p class="muted">
+        Datenquelle: Supabase-Tabelle fachbetriebe.
+      </p>
+
+      <div id="fachMsg"></div>
+
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Firma</th>
+              <th>Ansprechpartner</th>
+              <th>Telefon</th>
+              <th>E-Mail</th>
+              <th>PLZ / Ort</th>
+              <th>Leistungen</th>
+              <th>Status</th>
+              <th>Registriert</th>
+            </tr>
+          </thead>
+          <tbody id="fachBody">
+            <tr><td colspan="8">Noch nicht geladen.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- PARTNERBEWERBUNGEN -->
+    <section id="partnerSection" class="card hidden">
+      <div class="section-title">
+        <h2>Partnerbewerbungen</h2>
+        <button class="secondary" id="refreshPartner">
+          Aktualisieren
+        </button>
+      </div>
+
+      <p class="muted">
+        Datenquelle: Supabase-Tabelle partnerbetriebe.
+      </p>
+
+      <div id="partnerMsg"></div>
+
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Firma</th>
+              <th>Ansprechpartner</th>
+              <th>Telefon</th>
+              <th>E-Mail</th>
+              <th>PLZ / Region</th>
+              <th>Leistungen</th>
+              <th>Website</th>
+              <th>Status</th>
+              <th>Datum</th>
+            </tr>
+          </thead>
+          <tbody id="partnerBody">
+            <tr><td colspan="9">Noch nicht geladen.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
 </div>
 
 <script>
-const SUPABASE_URL = "https://ehzugjmltfcvllftpjpp.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_Ieo0pxh7y8L4nr2xMS7fQQ_mPonnlOm";
+"use strict";
+
+/* SUPABASE */
+const SUPABASE_URL =
+  "https://ehzugjmltfcvllftpjpp.supabase.co";
+
+const SUPABASE_PUBLISHABLE_KEY =
+  "sb_publishable_Ieo0pxh7y8L4nr2xMS7fQQ_mPonnlOm";
 
 const client = window.supabase.createClient(
   SUPABASE_URL,
   SUPABASE_PUBLISHABLE_KEY
 );
 
+/* ELEMENTE */
 const loginCard = document.getElementById("loginCard");
 const adminCard = document.getElementById("adminCard");
 const logoutBtn = document.getElementById("logoutBtn");
 const loginMsg = document.getElementById("loginMsg");
-const adminMsg = document.getElementById("adminMsg");
-const body = document.getElementById("requestsBody");
 
-function showLoginError(text){
-  loginMsg.innerHTML = '<div class="error">' + text + '</div>';
-}
-function showAdminError(text){
-  adminMsg.innerHTML = '<div class="error">' + text + '</div>';
+let loading = false;
+let currentSection = "requestsSection";
+
+/* SICHERE HTML-AUSGABE */
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
-async function loadRequests(){
-  adminMsg.innerHTML = "";
-  body.innerHTML = '<tr><td colspan="8" class="muted">Lade Bauanfragen …</td></tr>';
+function valueOf(row, ...keys) {
+  for (const key of keys) {
+    if (
+      row &&
+      row[key] !== undefined &&
+      row[key] !== null &&
+      row[key] !== ""
+    ) {
+      return row[key];
+    }
+  }
+  return "—";
+}
+
+function formatDate(value) {
+  if (!value) return "—";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "—";
+  }
+
+  return date.toLocaleString("de-DE");
+}
+
+function cell(value) {
+  return "<td>" + escapeHtml(value) + "</td>";
+}
+
+function badge(value) {
+  return '<span class="badge">' +
+    escapeHtml(value) + "</span>";
+}
+
+function showError(elementId, message) {
+  document.getElementById(elementId).innerHTML =
+    '<div class="error">' + escapeHtml(message) + "</div>";
+}
+
+function showEmpty(elementId, colspan, message) {
+  document.getElementById(elementId).innerHTML =
+    '<tr><td colspan="' + colspan +
+    '" class="muted">' + escapeHtml(message) + "</td></tr>";
+}
+
+function showLoading(elementId, colspan) {
+  showEmpty(elementId, colspan, "Daten werden geladen …");
+}
+
+function setCount(elementId, count) {
+  document.getElementById(elementId).textContent =
+    String(count);
+}
+
+/* BEREICH WECHSELN */
+function showSection(sectionId) {
+  currentSection = sectionId;
+
+  document.querySelectorAll(
+    "#adminCard > section.card"
+  ).forEach(section => {
+    section.classList.toggle(
+      "hidden",
+      section.id !== sectionId
+    );
+  });
+
+  document.querySelectorAll(".tabs button").forEach(button => {
+    button.classList.toggle(
+      "active",
+      button.dataset.section === sectionId
+    );
+  });
+}
+
+document.querySelectorAll(".tabs button").forEach(button => {
+  button.addEventListener("click", () => {
+    showSection(button.dataset.section);
+  });
+});
+
+/* BAUANFRAGEN */
+async function loadRequests() {
+  const target = "requestsBody";
+  document.getElementById("requestsMsg").innerHTML = "";
+  showLoading(target, 8);
 
   const { data, error } = await client
     .from("bauanfragen")
-    .select("id,service,plz,area,description,name,phone,email,status,created_at")
-    .order("created_at", { ascending:false });
+    .select("*")
+    .order("created_at", { ascending: false });
 
-  if(error){
-    body.innerHTML = "";
-    showAdminError("Bauanfragen konnten nicht geladen werden: " + error.message);
+  if (error) {
+    showEmpty(target, 8, "Bauanfragen konnten nicht geladen werden.");
+    showError(
+      "requestsMsg",
+      "Supabase-Fehler: " + error.message
+    );
     return;
   }
 
-  if(!data || data.length === 0){
-    body.innerHTML = '<tr><td colspan="8" class="muted">Keine Bauanfragen vorhanden.</td></tr>';
+  setCount("countRequests", data.length);
+
+  if (!data.length) {
+    showEmpty(target, 8, "Noch keine Bauanfragen vorhanden.");
     return;
   }
 
-  body.innerHTML = data.map(row => {
-    const date = row.created_at
-      ? new Date(row.created_at).toLocaleString("de-DE")
-      : "—";
+  document.getElementById(target).innerHTML = data.map(row => {
+    const date = formatDate(row.created_at);
+    const description = valueOf(row, "description");
+
     return `
       <tr>
-        <td>${escapeHtml(date)}</td>
-        <td><strong>${escapeHtml(row.service || "—")}</strong><br>
-            <span class="muted">${escapeHtml(row.description || "")}</span></td>
-        <td>${escapeHtml(row.plz || "—")}</td>
-        <td>${escapeHtml(row.area || "—")}</td>
-        <td>${escapeHtml(row.name || "—")}</td>
-        <td>${escapeHtml(row.phone || "—")}</td>
-        <td>${escapeHtml(row.email || "—")}</td>
-        <td><span class="badge">${escapeHtml(row.status || "—")}</span></td>
-      </tr>`;
+        ${cell(date)}
+        <td>
+          <strong>${escapeHtml(valueOf(row, "service"))}</strong>
+          <br>
+          <span class="muted">${escapeHtml(
+            description === "—" ? "" : description
+          )}</span>
+        </td>
+        ${cell(valueOf(row, "plz"))}
+        ${cell(valueOf(row, "area", "ort"))}
+        ${cell(valueOf(row, "name"))}
+        ${cell(valueOf(row, "phone", "telefon"))}
+        ${cell(valueOf(row, "email"))}
+        <td>${badge(valueOf(row, "status"))}</td>
+      </tr>
+    `;
   }).join("");
 }
 
-function escapeHtml(value){
-  return String(value)
-    .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;")
-    .replaceAll("'","&#039;");
+/* FACHBETRIEBE */
+async function loadFachbetriebe() {
+  const target = "fachBody";
+  document.getElementById("fachMsg").innerHTML = "";
+  showLoading(target, 8);
+
+  const { data, error } = await client
+    .from("fachbetriebe")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    showEmpty(target, 8, "Fachbetriebe konnten nicht geladen werden.");
+    showError(
+      "fachMsg",
+      "Supabase-Fehler: " + error.message
+    );
+    setCount("countFachbetriebe", "!");
+    return;
+  }
+
+  setCount("countFachbetriebe", data.length);
+
+  if (!data.length) {
+    showEmpty(
+      target,
+      8,
+      "Keine Fachbetriebe in dieser Tabelle gefunden. Prüfe, ob das Registrierungsformular seine Daten hier speichert."
+    );
+    return;
+  }
+
+  document.getElementById(target).innerHTML = data.map(row => {
+    const status =
+      row.abo_status ||
+      row.status ||
+      (
+        row.freigeschaltet === true ? "Freigeschaltet" :
+        row.aktiv === true ? "Aktiv" :
+        "Nicht freigeschaltet"
+      );
+
+    return `
+      <tr>
+        ${cell(valueOf(row, "firmenname", "firma"))}
+        ${cell(valueOf(row, "ansprechpartner", "inhaber"))}
+        ${cell(valueOf(row, "telefon", "phone"))}
+        ${cell(valueOf(row, "email"))}
+        ${cell(
+          String(valueOf(row, "plz")) +
+          " / " +
+          String(valueOf(row, "ort", "region"))
+        )}
+        ${cell(valueOf(row, "leistungen"))}
+        <td>${badge(status)}</td>
+        ${cell(formatDate(row.created_at))}
+      </tr>
+    `;
+  }).join("");
 }
 
-async function updateUI(){
-  const { data:{ session } } = await client.auth.getSession();
+/* PARTNERBEWERBUNGEN */
+async function loadPartnerbetriebe() {
+  const target = "partnerBody";
+  document.getElementById("partnerMsg").innerHTML = "";
+  showLoading(target, 9);
 
-  if(session){
+  const { data, error } = await client
+    .from("partnerbetriebe")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    showEmpty(
+      target,
+      9,
+      "Partnerbewerbungen konnten nicht geladen werden."
+    );
+    showError(
+      "partnerMsg",
+      "Supabase-Fehler: " + error.message
+    );
+    setCount("countPartner", "!");
+    return;
+  }
+
+  setCount("countPartner", data.length);
+
+  if (!data.length) {
+    showEmpty(
+      target,
+      9,
+      "Keine Partnerbewerbungen vorhanden."
+    );
+    return;
+  }
+
+  document.getElementById(target).innerHTML = data.map(row => {
+    return `
+      <tr>
+        ${cell(valueOf(row, "firma", "firmenname"))}
+        ${cell(valueOf(row, "ansprechpartner", "inhaber"))}
+        ${cell(valueOf(row, "telefon", "phone"))}
+        ${cell(valueOf(row, "email"))}
+        ${cell(
+          String(valueOf(row, "plz")) +
+          " / " +
+          String(valueOf(row, "region", "ort"))
+        )}
+        ${cell(valueOf(row, "leistungen"))}
+        <td>${escapeHtml(valueOf(row, "website"))}</td>
+        <td>${badge(valueOf(row, "status"))}</td>
+        ${cell(formatDate(row.created_at))}
+      </tr>
+    `;
+  }).join("");
+}
+
+/* ALLE BEREICHE AKTUALISIEREN */
+async function refreshAll() {
+  if (loading) return;
+
+  loading = true;
+
+  const buttons = document.querySelectorAll(
+    "#adminCard button"
+  );
+
+  buttons.forEach(button => {
+    button.disabled = true;
+  });
+
+  try {
+    await Promise.all([
+      loadRequests(),
+      loadFachbetriebe(),
+      loadPartnerbetriebe()
+    ]);
+  } catch (error) {
+    document.getElementById("globalMsg").innerHTML =
+      '<div class="error">Fehler beim Aktualisieren: ' +
+      escapeHtml(error.message) + "</div>";
+  } finally {
+    buttons.forEach(button => {
+      button.disabled = false;
+    });
+    loading = false;
+  }
+}
+
+/* LOGIN-STATUS */
+async function updateUI() {
+  const { data, error } = await client.auth.getSession();
+
+  if (error) {
+    loginMsg.innerHTML =
+      '<div class="error">Sitzung konnte nicht geprüft werden.</div>';
+    return;
+  }
+
+  if (data.session) {
     loginCard.classList.add("hidden");
     adminCard.classList.remove("hidden");
     logoutBtn.classList.remove("hidden");
-    await loadRequests();
-  }else{
+
+    await refreshAll();
+  } else {
     loginCard.classList.remove("hidden");
     adminCard.classList.add("hidden");
     logoutBtn.classList.add("hidden");
   }
 }
 
-document.getElementById("loginBtn").addEventListener("click", async () => {
-  loginMsg.innerHTML = "";
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value;
+/* ANMELDEN */
+document.getElementById("loginBtn").addEventListener(
+  "click",
+  async () => {
+    loginMsg.innerHTML = "";
 
-  if(!email || !password){
-    showLoginError("Bitte E-Mail und Passwort eingeben.");
-    return;
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+
+    if (!email || !password) {
+      loginMsg.innerHTML =
+        '<div class="error">Bitte E-Mail und Passwort eingeben.</div>';
+      return;
+    }
+
+    const button = document.getElementById("loginBtn");
+    button.disabled = true;
+
+    try {
+      const { error } = await client.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        loginMsg.innerHTML =
+          '<div class="error">Anmeldung fehlgeschlagen. Bitte Zugangsdaten prüfen.</div>';
+        return;
+      }
+
+      await updateUI();
+    } finally {
+      button.disabled = false;
+    }
   }
+);
 
-  const { error } = await client.auth.signInWithPassword({ email, password });
+/* ABMELDEN */
+logoutBtn.addEventListener("click", async () => {
+  const { error } = await client.auth.signOut();
 
-  if(error){
-    showLoginError("Anmeldung fehlgeschlagen. Bitte Zugangsdaten prüfen.");
+  if (error) {
+    alert("Abmelden fehlgeschlagen: " + error.message);
     return;
   }
 
   await updateUI();
 });
 
-document.getElementById("logoutBtn").addEventListener("click", async () => {
-  await client.auth.signOut();
-  await updateUI();
+/* EINZELNE BEREICHE AKTUALISIEREN */
+document.getElementById("refreshRequests")
+  .addEventListener("click", loadRequests);
+
+document.getElementById("refreshFach")
+  .addEventListener("click", loadFachbetriebe);
+
+document.getElementById("refreshPartner")
+  .addEventListener("click", loadPartnerbetriebe);
+
+/* SESSION-WECHSEL */
+client.auth.onAuthStateChange((event, session) => {
+  if (event === "SIGNED_OUT") {
+    loginCard.classList.remove("hidden");
+    adminCard.classList.add("hidden");
+    logoutBtn.classList.add("hidden");
+  } else if (event === "SIGNED_IN" && session) {
+    loginCard.classList.add("hidden");
+    adminCard.classList.remove("hidden");
+    logoutBtn.classList.remove("hidden");
+  }
 });
 
-document.getElementById("refreshBtn").addEventListener("click", loadRequests);
-
-client.auth.onAuthStateChange(() => {
-  updateUI();
-});
-
+/* START */
 updateUI();
 </script>
 </body>
