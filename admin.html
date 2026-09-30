@@ -7,6 +7,7 @@
 <meta name="theme-color" content="#171717">
 <title>Riemer BauConnect – Admin</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
 :root {
   --bg:#171717;
@@ -101,8 +102,13 @@ button:focus-visible,.request:focus-visible {
   padding:14px;
   margin-top:10px;
 }
-.request { cursor:pointer; }
-.request:hover { border-color:var(--yellow); }
+.request {
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+.request:hover,.request:focus {
+  border-color:var(--yellow);
+}
 .request-head {
   display:flex;
   justify-content:space-between;
@@ -135,10 +141,10 @@ button:focus-visible,.request:focus-visible {
   margin-top:9px;
 }
 .badge.neu,.badge.offen { background:#72551b; }
-.badge.in_bearbeitung,.badge.angesehen { background:#254f72; }
-.badge.erledigt,.badge.angenommen,.badge.freigeschaltet {
-  background:var(--green);
-}
+.badge.in_bearbeitung,.badge.angesehen,
+.badge.kontakt,.badge.angebot { background:#254f72; }
+.badge.erledigt,.badge.angenommen,.badge.freigeschaltet,
+.badge.auftrag { background:var(--green); }
 .badge.abgelehnt { background:#702b2b; }
 .open-btn { width:100%; margin-top:12px; }
 .message {
@@ -157,6 +163,7 @@ button:focus-visible,.request:focus-visible {
 .back { margin-bottom:14px; }
 .firm-actions { display:flex; gap:8px; margin-top:12px; }
 .firm-actions button { flex:1; }
+
 @media(max-width:560px) {
   .wrap { padding:12px; }
   .panel { padding:14px; }
@@ -172,6 +179,7 @@ button:focus-visible,.request:focus-visible {
 }
 </style>
 </head>
+
 <body>
 <div class="wrap">
 
@@ -188,12 +196,12 @@ button:focus-visible,.request:focus-visible {
         required placeholder="E-Mail-Adresse">
 
       <label for="password">Passwort</label>
-      <input id="password" type="password" autocomplete="current-password"
+      <input id="password" type="password"
+        autocomplete="current-password"
         required placeholder="Passwort">
 
       <button class="full" id="loginBtn" type="submit">Anmelden</button>
     </form>
-
     <div id="loginMessage" aria-live="polite"></div>
   </section>
 
@@ -213,11 +221,10 @@ button:focus-visible,.request:focus-visible {
     </div>
 
     <section id="requestsSection" class="panel">
-
       <div id="requestListView">
         <h2>Bauanfragen</h2>
         <div class="small">
-          Anfrage antippen oder „Öffnen & bearbeiten“ auswählen.
+          Tippe auf eine Anfrage oder auf „Öffnen & bearbeiten“.
         </div>
 
         <div class="tools">
@@ -228,6 +235,7 @@ button:focus-visible,.request:focus-visible {
           <select id="statusFilter" aria-label="Nach Status filtern">
             <option value="">Alle Status</option>
             <option value="neu">Neu</option>
+            <option value="offen">Offen</option>
             <option value="angesehen">Angesehen</option>
             <option value="kontakt">Kontakt aufgenommen</option>
             <option value="in_bearbeitung">In Bearbeitung</option>
@@ -256,7 +264,6 @@ button:focus-visible,.request:focus-visible {
         <div id="detailIntro" class="summary"></div>
         <div id="detailContent"></div>
       </div>
-
     </section>
 
     <section id="firmsSection" class="panel hidden">
@@ -271,27 +278,33 @@ button:focus-visible,.request:focus-visible {
       <div id="firmsMessage" aria-live="polite"></div>
       <div id="firmList"></div>
     </section>
-
   </main>
 </div>
 
 <script>
+"use strict";
+
 const SUPABASE_URL = "https://ehzugjmltfcvllftpjpp.supabase.co";
 const SUPABASE_KEY = "sb_publishable_Ieo0pxh7y8L4nr2xMS7fQQ_mPonnlOm";
-const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const client = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
 
 const $ = id => document.getElementById(id);
 
 let allRequests = [];
 let currentRequest = null;
+let requestLoadVersion = 0;
 
 function escapeHtml(value) {
   return String(value ?? "")
-    .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;")
-    .replaceAll("'","&#039;");
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 function formatDate(value) {
@@ -299,44 +312,45 @@ function formatDate(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
   return date.toLocaleString("de-DE", {
-    dateStyle:"short",
-    timeStyle:"short"
+    dateStyle: "short",
+    timeStyle: "short"
   });
 }
 
 function statusLabel(value) {
   const labels = {
-    neu:"Neu",
-    offen:"Offen",
-    angesehen:"Angesehen",
-    kontakt:"Kontakt aufgenommen",
-    in_bearbeitung:"In Bearbeitung",
-    angebot:"Angebot erstellt",
-    angenommen:"Angenommen",
-    auftrag:"Auftrag erteilt",
-    abgelehnt:"Abgelehnt",
-    erledigt:"Erledigt"
+    neu: "Neu",
+    offen: "Offen",
+    angesehen: "Angesehen",
+    kontakt: "Kontakt aufgenommen",
+    in_bearbeitung: "In Bearbeitung",
+    angebot: "Angebot erstellt",
+    angenommen: "Angenommen",
+    auftrag: "Auftrag erteilt",
+    abgelehnt: "Abgelehnt",
+    erledigt: "Erledigt"
   };
   return labels[value] || value || "Neu";
 }
 
-function showMessage(element, text, type="success") {
+function showMessage(element, text, type = "success") {
+  if (!element) return;
   element.innerHTML = text
     ? `<div class="message ${type}">${escapeHtml(text)}</div>`
     : "";
 }
 
 async function updateUI() {
-  const {data,error} = await client.auth.getSession();
+  const { data, error } = await client.auth.getSession();
 
   if (error) {
-    showMessage($("loginMessage"),error.message,"error");
+    showMessage($("loginMessage"), error.message, "error");
     return;
   }
 
   const signedIn = !!data.session;
-  $("loginBox").classList.toggle("hidden",signedIn);
-  $("adminBox").classList.toggle("hidden",!signedIn);
+  $("loginBox").classList.toggle("hidden", signedIn);
+  $("adminBox").classList.toggle("hidden", !signedIn);
 
   if (signedIn) {
     showSection("requests");
@@ -348,21 +362,25 @@ async function login(event) {
 
   $("loginBtn").disabled = true;
   $("loginBtn").textContent = "Anmeldung läuft …";
-  showMessage($("loginMessage"),"");
+  showMessage($("loginMessage"), "");
 
   try {
-    const {error} = await client.auth.signInWithPassword({
-      email:$("email").value.trim(),
-      password:$("password").value
+    const { error } = await client.auth.signInWithPassword({
+      email: $("email").value.trim(),
+      password: $("password").value
     });
 
     if (error) {
-      showMessage($("loginMessage"),error.message,"error");
+      showMessage($("loginMessage"), error.message, "error");
     } else {
       await updateUI();
     }
   } catch (error) {
-    showMessage($("loginMessage"),error.message || "Anmeldung fehlgeschlagen.","error");
+    showMessage(
+      $("loginMessage"),
+      error.message || "Anmeldung fehlgeschlagen.",
+      "error"
+    );
   } finally {
     $("loginBtn").disabled = false;
     $("loginBtn").textContent = "Anmelden";
@@ -370,10 +388,10 @@ async function login(event) {
 }
 
 async function logout() {
-  const {error} = await client.auth.signOut();
+  const { error } = await client.auth.signOut();
 
   if (error) {
-    showMessage($("requestsMessage"),error.message,"error");
+    showMessage($("requestsMessage"), error.message, "error");
   }
 
   await updateUI();
@@ -382,12 +400,15 @@ async function logout() {
 function showSection(section) {
   const requests = section === "requests";
 
-  $("requestsSection").classList.toggle("hidden",!requests);
-  $("firmsSection").classList.toggle("hidden",requests);
-  $("requestsTab").classList.toggle("active",requests);
-  $("firmsTab").classList.toggle("active",!requests);
+  $("requestsSection").classList.toggle("hidden", !requests);
+  $("firmsSection").classList.toggle("hidden", requests);
+  $("requestsTab").classList.toggle("active", requests);
+  $("firmsTab").classList.toggle("active", !requests);
 
   if (requests) {
+    $("requestListView").classList.remove("hidden");
+    $("detailView").classList.add("hidden");
+    currentRequest = null;
     loadRequests();
   } else {
     loadFirms();
@@ -396,16 +417,25 @@ function showSection(section) {
 
 /* BAUANFRAGEN LADEN */
 async function loadRequests() {
-  showMessage($("requestsMessage"),"Anfragen werden geladen …");
+  const loadVersion = ++requestLoadVersion;
+
+  showMessage($("requestsMessage"), "Anfragen werden geladen …");
   $("requestList").innerHTML = "";
   $("requestSummary").textContent = "";
 
   try {
-    // Bestehenden Tabellennamen beibehalten.
-    const {data,error} = await client
-      .from("Bauanfragen")
+    /*
+      WICHTIG:
+      Die Supabase-Tabelle wird kleingeschrieben angesprochen.
+      Falls deine tatsächliche Tabelle anders heißt, muss dieser
+      Name an den Namen im Supabase-Tabelleneditor angepasst werden.
+    */
+    const { data, error } = await client
+      .from("bauanfragen")
       .select("*")
-      .order("created_at",{ascending:false});
+      .order("created_at", { ascending: false });
+
+    if (loadVersion !== requestLoadVersion) return;
 
     if (error) {
       showMessage(
@@ -417,32 +447,45 @@ async function loadRequests() {
     }
 
     allRequests = data || [];
-    showMessage($("requestsMessage"),"");
+    showMessage($("requestsMessage"), "");
     renderRequests();
 
   } catch (error) {
+    if (loadVersion !== requestLoadVersion) return;
+
     showMessage(
       $("requestsMessage"),
-      "Fehler beim Laden: " + (error.message || "Unbekannter Fehler"),
+      "Fehler beim Laden: " +
+      (error.message || "Unbekannter Fehler"),
       "error"
     );
   }
 }
 
-/* SUCHE UND FILTER */
+/* SUCHE UND STATUSFILTER */
 function renderRequests() {
-  const query = $("searchRequests").value.trim().toLocaleLowerCase("de");
+  const query = $("searchRequests").value
+    .trim()
+    .toLocaleLowerCase("de");
+
   const status = $("statusFilter").value;
 
   const filtered = allRequests.filter(row => {
     const values = [
-      row.service,row.plz,row.area,row.description,
-      row.name,row.phone,row.email,row.status
+      row.service,
+      row.plz,
+      row.area,
+      row.description,
+      row.name,
+      row.phone,
+      row.email,
+      row.status
     ];
 
     const haystack = values.join(" ").toLocaleLowerCase("de");
     const matchesSearch = !query || haystack.includes(query);
-    const matchesStatus = !status || (row.status || "neu") === status;
+    const matchesStatus =
+      !status || (row.status || "neu") === status;
 
     return matchesSearch && matchesStatus;
   });
@@ -463,7 +506,7 @@ function renderRequests() {
 
     item.className = "request";
     item.tabIndex = 0;
-    item.setAttribute("role","button");
+    item.setAttribute("role", "button");
     item.setAttribute(
       "aria-label",
       "Anfrage öffnen und bearbeiten"
@@ -485,7 +528,7 @@ function renderRequests() {
 
       <div class="request-meta">
         📍 ${escapeHtml(
-          [row.plz,row.area].filter(Boolean).join(" – ") ||
+          [row.plz, row.area].filter(Boolean).join(" – ") ||
           "Kein Ort angegeben"
         )}
       </div>
@@ -503,10 +546,11 @@ function renderRequests() {
       </button>
     `;
 
-    // Die ganze Karte ist anklickbar.
-    item.addEventListener("click",() => showDetail(row));
+    // Ganze Karte antippbar.
+    item.addEventListener("click", () => showDetail(row));
 
-    item.addEventListener("keydown",event => {
+    // Tastaturbedienung für die Karte.
+    item.addEventListener("keydown", event => {
       if (
         (event.key === "Enter" || event.key === " ") &&
         event.target === item
@@ -516,8 +560,8 @@ function renderRequests() {
       }
     });
 
-    // Der sichtbare Button funktioniert unabhängig von der Karte.
-    item.querySelector(".open-btn").addEventListener("click",event => {
+    // Der Button funktioniert auch unabhängig von der Karte.
+    item.querySelector(".open-btn").addEventListener("click", event => {
       event.stopPropagation();
       showDetail(row);
     });
@@ -537,24 +581,25 @@ function showDetail(row) {
     `Anfrage vom ${formatDate(row.created_at)} · ID: ${row.id ?? "nicht vorhanden"}`;
 
   const statuses = [
-    ["neu","Neu"],
-    ["angesehen","Angesehen"],
-    ["kontakt","Kontakt aufgenommen"],
-    ["in_bearbeitung","In Bearbeitung"],
-    ["angebot","Angebot erstellt"],
-    ["angenommen","Angenommen"],
-    ["auftrag","Auftrag erteilt"],
-    ["abgelehnt","Abgelehnt"],
-    ["erledigt","Erledigt"]
+    ["neu", "Neu"],
+    ["offen", "Offen"],
+    ["angesehen", "Angesehen"],
+    ["kontakt", "Kontakt aufgenommen"],
+    ["in_bearbeitung", "In Bearbeitung"],
+    ["angebot", "Angebot erstellt"],
+    ["angenommen", "Angenommen"],
+    ["auftrag", "Auftrag erteilt"],
+    ["abgelehnt", "Abgelehnt"],
+    ["erledigt", "Erledigt"]
   ];
 
   const currentStatus = String(row.status || "neu");
 
   if (!statuses.some(option => option[0] === currentStatus)) {
-    statuses.push([currentStatus,currentStatus]);
+    statuses.push([currentStatus, currentStatus]);
   }
 
-  const options = statuses.map(([value,label]) => `
+  const options = statuses.map(([value, label]) => `
     <option value="${escapeHtml(value)}"
       ${value === currentStatus ? "selected" : ""}>
       ${escapeHtml(label)}
@@ -563,7 +608,6 @@ function showDetail(row) {
 
   $("detailContent").innerHTML = `
     <form id="requestEditForm">
-
       <label for="editService">Leistung / Anfrage</label>
       <input id="editService" name="service" required
         value="${escapeHtml(row.service || "")}">
@@ -609,13 +653,12 @@ function showDetail(row) {
     </form>
   `;
 
-  $("cancelEditBtn").addEventListener("click",showList);
-
-  $("requestEditForm").addEventListener("submit",saveRequest);
+  $("cancelEditBtn").addEventListener("click", showList);
+  $("requestEditForm").addEventListener("submit", saveRequest);
 
   $("detailView").scrollIntoView({
-    behavior:"smooth",
-    block:"start"
+    behavior: "smooth",
+    block: "start"
   });
 }
 
@@ -642,27 +685,27 @@ async function saveRequest(event) {
   button.disabled = true;
   button.textContent = "Speichert …";
 
-  showMessage($("editMessage"),"");
+  showMessage($("editMessage"), "");
 
   const form = new FormData(event.currentTarget);
 
   const changes = {
-    service:String(form.get("service") || "").trim(),
-    name:String(form.get("name") || "").trim(),
-    plz:String(form.get("plz") || "").trim(),
-    area:String(form.get("area") || "").trim() || null,
-    phone:String(form.get("phone") || "").trim(),
-    email:String(form.get("email") || "").trim() || null,
-    description:String(form.get("description") || "").trim() || null,
-    status:String(form.get("status") || "neu")
+    service: String(form.get("service") || "").trim(),
+    name: String(form.get("name") || "").trim(),
+    plz: String(form.get("plz") || "").trim(),
+    area: String(form.get("area") || "").trim() || null,
+    phone: String(form.get("phone") || "").trim(),
+    email: String(form.get("email") || "").trim() || null,
+    description: String(form.get("description") || "").trim() || null,
+    status: String(form.get("status") || "neu")
   };
 
   try {
-    // Gleiche Tabelle und ID-Spalte wie bei der bisherigen Verwaltung.
-    const {data,error} = await client
-      .from("Bauanfragen")
+    // Dieselbe Tabelle und dieselbe ID wie beim Laden.
+    const { data, error } = await client
+      .from("bauanfragen")
       .update(changes)
-      .eq("id",currentRequest.id)
+      .eq("id", currentRequest.id)
       .select("id");
 
     if (error) {
@@ -674,21 +717,21 @@ async function saveRequest(event) {
       return;
     }
 
-    // Keine zurückgegebene Zeile kann auf RLS oder Berechtigungen hinweisen.
     if (!data || data.length === 0) {
       showMessage(
         $("editMessage"),
-        "Es wurde keine Anfrage geändert. Bitte die UPDATE-Berechtigungen (RLS) in Supabase prüfen.",
+        "Es wurde keine Anfrage geändert. Prüfe die UPDATE-Berechtigungen (RLS) und die Zugriffsrechte in Supabase.",
         "error"
       );
       return;
     }
 
-    const updated = {...currentRequest,...changes};
+    const updated = { ...currentRequest, ...changes };
 
-    // Liste neu laden und Detailansicht offen halten.
+    // Aktualisierte Liste laden.
     await loadRequests();
 
+    // Detailansicht mit den gespeicherten Werten offen halten.
     currentRequest = updated;
     showDetail(updated);
 
@@ -715,16 +758,16 @@ async function saveRequest(event) {
   }
 }
 
-/* FACHBETRIEBE */
+/* FACHBETRIEBE LADEN */
 async function loadFirms() {
-  showMessage($("firmsMessage"),"Fachbetriebe werden geladen …");
+  showMessage($("firmsMessage"), "Fachbetriebe werden geladen …");
   $("firmList").innerHTML = "";
 
   try {
-    const {data,error} = await client
+    const { data, error } = await client
       .from("fachbetriebe")
       .select("*")
-      .order("created_at",{ascending:false});
+      .order("created_at", { ascending: false });
 
     if (error) {
       showMessage(
@@ -735,7 +778,7 @@ async function loadFirms() {
       return;
     }
 
-    showMessage($("firmsMessage"),"");
+    showMessage($("firmsMessage"), "");
 
     if (!data || data.length === 0) {
       $("firmList").innerHTML =
@@ -776,7 +819,10 @@ async function loadFirms() {
         </div>
 
         <div class="request-meta">
-          📍 ${escapeHtml([firm.plz,firm.ort].filter(Boolean).join(" ") || "Kein Ort angegeben")}
+          📍 ${escapeHtml(
+            [firm.plz, firm.ort].filter(Boolean).join(" ") ||
+            "Kein Ort angegeben"
+          )}
         </div>
 
         <div class="request-meta">
@@ -794,8 +840,8 @@ async function loadFirms() {
         </div>
       `;
 
-      item.querySelector("button").addEventListener("click",event => {
-        setFirmApproval(firm.id,!approved,event.currentTarget);
+      item.querySelector("button").addEventListener("click", event => {
+        setFirmApproval(firm.id, !approved, event.currentTarget);
       });
 
       $("firmList").appendChild(item);
@@ -804,15 +850,21 @@ async function loadFirms() {
   } catch (error) {
     showMessage(
       $("firmsMessage"),
-      "Fehler beim Laden: " + (error.message || "Unbekannter Fehler"),
+      "Fehler beim Laden: " +
+      (error.message || "Unbekannter Fehler"),
       "error"
     );
   }
 }
 
-async function setFirmApproval(id,approved,button) {
+/* FACHBETRIEB FREISCHALTEN */
+async function setFirmApproval(id, approved, button) {
   if (id == null) {
-    showMessage($("firmsMessage"),"Dieser Betrieb hat keine ID.","error");
+    showMessage(
+      $("firmsMessage"),
+      "Dieser Betrieb hat keine ID.",
+      "error"
+    );
     return;
   }
 
@@ -825,10 +877,10 @@ async function setFirmApproval(id,approved,button) {
   button.disabled = true;
 
   try {
-    const {data,error} = await client
+    const { data, error } = await client
       .from("fachbetriebe")
-      .update({freigeschaltet:approved})
-      .eq("id",id)
+      .update({ freigeschaltet: approved })
+      .eq("id", id)
       .select("id");
 
     if (error) {
@@ -843,7 +895,7 @@ async function setFirmApproval(id,approved,button) {
     if (!data || data.length === 0) {
       showMessage(
         $("firmsMessage"),
-        "Es wurde nichts geändert. Bitte die UPDATE-RLS-Berechtigung in Supabase prüfen.",
+        "Es wurde nichts geändert. Prüfe die UPDATE-RLS-Berechtigung in Supabase.",
         "error"
       );
       return;
@@ -870,18 +922,29 @@ async function setFirmApproval(id,approved,button) {
 }
 
 /* BUTTONS UND FILTER */
-$("loginForm").addEventListener("submit",login);
-$("logoutBtn").addEventListener("click",logout);
-$("refreshRequestsBtn").addEventListener("click",loadRequests);
-$("refreshFirmsBtn").addEventListener("click",loadFirms);
-$("backBtn").addEventListener("click",showList);
-$("requestsTab").addEventListener("click",() => showSection("requests"));
-$("firmsTab").addEventListener("click",() => showSection("firms"));
-$("searchRequests").addEventListener("input",renderRequests);
-$("statusFilter").addEventListener("change",renderRequests);
+$("loginForm").addEventListener("submit", login);
+$("logoutBtn").addEventListener("click", logout);
+$("refreshRequestsBtn").addEventListener("click", loadRequests);
+$("refreshFirmsBtn").addEventListener("click", loadFirms);
+$("backBtn").addEventListener("click", showList);
 
-client.auth.onAuthStateChange(() => {
-  updateUI();
+$("requestsTab").addEventListener("click", () => {
+  showSection("requests");
+});
+
+$("firmsTab").addEventListener("click", () => {
+  showSection("firms");
+});
+
+$("searchRequests").addEventListener("input", renderRequests);
+$("statusFilter").addEventListener("change", renderRequests);
+
+client.auth.onAuthStateChange((event, session) => {
+  // Verhindert unnötige parallele UI-Aktualisierungen.
+  if (event === "SIGNED_IN" || event === "SIGNED_OUT" ||
+      event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED") {
+    updateUI();
+  }
 });
 
 updateUI();
