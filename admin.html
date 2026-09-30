@@ -15,8 +15,14 @@ h1{margin:0;font-size:36px}
 .brand{color:#ffd000}
 .subtitle{color:#aaa;font-size:20px;margin:8px 0 30px}
 .card{background:#222;border:1px solid #3a3a3a;border-radius:20px;padding:24px;margin-bottom:20px}
-input,button{width:100%;padding:15px;border-radius:12px;border:1px solid #444;font-size:16px}
-input{background:#111;color:#fff;margin:8px 0 15px}
+input,button,select,textarea{
+  width:100%;padding:15px;border-radius:12px;
+  border:1px solid #444;font-size:16px
+}
+input,select,textarea{
+  background:#111;color:#fff;margin:8px 0 15px
+}
+textarea{min-height:120px;resize:vertical}
 button{background:#ffd000;color:#111;border:0;font-weight:bold;cursor:pointer}
 button:disabled{opacity:.55;cursor:wait}
 button.secondary{background:#333;color:#fff}
@@ -39,23 +45,22 @@ button.danger{background:#7b2929;color:#fff}
 .badge{display:inline-block;background:#333;padding:6px 10px;border-radius:8px;margin-top:10px}
 .badge.pending{background:#72551b}
 .badge.approved{background:#235c32}
-.firm-actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
-.firm-actions button{width:auto;flex:1;min-width:170px}
+.firm-actions,.edit-actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+.firm-actions button,.edit-actions button{width:auto;flex:1;min-width:140px}
 .detail{margin-top:20px}
 .detail-row{border-bottom:1px solid #3b3b3b;padding:14px 0}
 .detail-label{color:#ffd000;font-size:14px;margin-bottom:5px}
 .detail-value{font-size:17px;word-break:break-word}
 .back{margin-bottom:15px}
 .small{color:#aaa;margin-top:6px}
-
 @media(max-width:600px){
   .wrap{padding:16px}
   h1{font-size:30px}
   .topbar{align-items:flex-start;flex-direction:column}
   .topbar button{width:100%}
   .request-title,.firm-title{flex-direction:column}
-  .firm-actions{flex-direction:column}
-  .firm-actions button{width:100%}
+  .firm-actions,.edit-actions{flex-direction:column}
+  .firm-actions button,.edit-actions button{width:100%}
   .card{padding:18px}
 }
 </style>
@@ -68,16 +73,11 @@ button.danger{background:#7b2929;color:#fff}
 
   <div id="loginBox" class="card">
     <h2>Admin-Login</h2>
-
     <label for="email">E-Mail</label>
-    <input id="email" type="email"
-      placeholder="E-Mail-Adresse" autocomplete="username">
-
+    <input id="email" type="email" placeholder="E-Mail-Adresse" autocomplete="username">
     <label for="password">Passwort</label>
-    <input id="password" type="password"
-      placeholder="Passwort" autocomplete="current-password">
-
-    <button id="loginBtn" type="button">Anmelden</button>
+    <input id="password" type="password" placeholder="Passwort" autocomplete="current-password">
+    <button id="loginBtn">Anmelden</button>
     <div id="loginMessage" aria-live="polite"></div>
   </div>
 
@@ -87,7 +87,7 @@ button.danger{background:#7b2929;color:#fff}
         <h2 style="margin:0">Verwaltung</h2>
         <div class="small">Bauanfragen und registrierte Fachbetriebe</div>
       </div>
-      <button id="logoutBtn" class="secondary" type="button">Abmelden</button>
+      <button id="logoutBtn" class="secondary">Abmelden</button>
     </div>
 
     <div class="tabs">
@@ -97,35 +97,24 @@ button.danger{background:#7b2929;color:#fff}
 
     <section id="requestsSection" class="card">
       <h2>Bauanfragen</h2>
-      <div class="small">Eingegangene Kundenanfragen</div>
-
-      <button id="refreshRequestsBtn" style="margin-top:18px" type="button">
-        Bauanfragen aktualisieren
-      </button>
-
+      <div class="small">Alle eingegangenen Kundenanfragen bearbeiten</div>
+      <button id="refreshRequestsBtn" style="margin-top:18px">Bauanfragen aktualisieren</button>
       <div id="requestsMessage" aria-live="polite"></div>
       <div id="requestList"></div>
 
       <div id="detailView" class="hidden">
-        <button id="backBtn" class="secondary back"
-          style="margin-top:18px" type="button">
+        <button id="backBtn" class="secondary back" style="margin-top:18px">
           ← Zurück zu den Bauanfragen
         </button>
-        <h2>Bauanfrage</h2>
+        <h2>Bauanfrage bearbeiten</h2>
         <div id="detailContent"></div>
       </div>
     </section>
 
     <section id="firmsSection" class="card hidden">
       <h2>Fachbetriebe</h2>
-      <div class="small">
-        Registrierte Firmen prüfen und Freischaltung verwalten.
-      </div>
-
-      <button id="refreshFirmsBtn" style="margin-top:18px" type="button">
-        Fachbetriebe aktualisieren
-      </button>
-
+      <div class="small">Registrierte Firmen prüfen und Freischaltung verwalten.</div>
+      <button id="refreshFirmsBtn" style="margin-top:18px">Fachbetriebe aktualisieren</button>
       <div id="firmsMessage" aria-live="polite"></div>
       <div id="firmList"></div>
     </section>
@@ -133,47 +122,439 @@ button.danger{background:#7b2929;color:#fff}
 </div>
 
 <script>
-"use strict";
+const SUPABASE_URL = "https://ehzugjmltfcvllftpjpp.supabase.co";
+const SUPABASE_KEY = "sb_publishable_Ieo0pxh7y8L4nr2xMS7fQQ_mPonnlOm";
 
-const SUPABASE_URL =
-  "https://ehzugjmltfcvllftpjpp.supabase.co";
-
-const SUPABASE_KEY =
-  "sb_publishable_Ieo0pxh7y8L4nr2xMS7fQQ_mPonnlOm";
-
-const client = window.supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
-);
+const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const loginBox = document.getElementById("loginBox");
 const adminBox = document.getElementById("adminBox");
 const loginMessage = document.getElementById("loginMessage");
-
 const requestsMessage = document.getElementById("requestsMessage");
 const firmsMessage = document.getElementById("firmsMessage");
-
 const requestList = document.getElementById("requestList");
 const firmList = document.getElementById("firmList");
-
 const detailView = document.getElementById("detailView");
 const detailContent = document.getElementById("detailContent");
-
 const requestsSection = document.getElementById("requestsSection");
 const firmsSection = document.getElementById("firmsSection");
-
 const requestsTab = document.getElementById("requestsTab");
 const firmsTab = document.getElementById("firmsTab");
 
-let currentSection = "requests";
+let currentRequest = null;
+let requestCache = [];
 
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+function showError(element, message) {
+  element.innerHTML = '<div class="error">' + escapeHtml(message) + '</div>';
+}
+
+function showSuccess(element, message) {
+  element.innerHTML = '<div class="success">' + escapeHtml(message) + '</div>';
+}
+
+async function login() {
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+
+  loginMessage.innerHTML = "";
+
+  if (!email || !password) {
+    showError(loginMessage, "Bitte E-Mail und Passwort eingeben.");
+    return;
+  }
+
+  const { error } = await client.auth.signInWithPassword({ email, password });
+
+  if (error) {
+    showError(loginMessage, error.message);
+    return;
+  }
+
+  await updateUI();
+}
+
+async function logout() {
+  await client.auth.signOut();
+  currentRequest = null;
+  await updateUI();
+}
+
+async function updateUI() {
+  const { data, error } = await client.auth.getSession();
+
+  if (error) {
+    showError(loginMessage, "Sitzung konnte nicht geprüft werden: " + error.message);
+    return;
+  }
+
+  if (data.session) {
+    loginBox.classList.add("hidden");
+    adminBox.classList.remove("hidden");
+    await showSection("requests");
+  } else {
+    loginBox.classList.remove("hidden");
+    adminBox.classList.add("hidden");
+  }
+}
+
+async function showSection(section) {
+  const showRequests = section === "requests";
+
+  requestsSection.classList.toggle("hidden", !showRequests);
+  firmsSection.classList.toggle("hidden", showRequests);
+  requestsTab.classList.toggle("active", showRequests);
+  firmsTab.classList.toggle("active", !showRequests);
+
+  if (showRequests) {
+    await loadRequests();
+  } else {
+    await loadFirms();
+  }
+}
+
+async function loadRequests() {
+  requestsMessage.innerHTML = "";
+  requestList.innerHTML = '<div class="small">Bauanfragen werden geladen …</div>';
+
+  const { data, error } = await client
+    .from("Bauanfragen")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    requestList.innerHTML = "";
+    showError(
+      requestsMessage,
+      "Bauanfragen konnten nicht geladen werden: " + error.message
+    );
+    return;
+  }
+
+  requestCache = data || [];
+  renderRequests(requestCache);
+}
+
+function renderRequests(data) {
+  requestList.innerHTML = "";
+  requestsMessage.innerHTML = "";
+
+  if (!data.length) {
+    requestList.innerHTML =
+      '<div class="success">Noch keine Bauanfragen vorhanden.</div>';
+    return;
+  }
+
+  data.forEach(row => {
+    const item = document.createElement("article");
+    item.className = "request";
+    item.tabIndex = 0;
+    item.setAttribute("role", "button");
+    item.setAttribute("aria-label", "Bauanfrage öffnen: " + (row.service || "Anfrage"));
+
+    item.innerHTML = `
+      <div class="request-title">
+        <div class="request-service">${escapeHtml(row.service || "Sonstige Anfrage")}</div>
+        <div class="request-date">${escapeHtml(formatDate(row.created_at))}</div>
+      </div>
+      <div class="request-info">📍 ${escapeHtml(row.plz || "")}${row.area ? " – " + escapeHtml(row.area) : ""}</div>
+      <div class="request-info">👤 ${escapeHtml(row.name || "Kein Name")}</div>
+      <div class="request-info">📞 ${escapeHtml(row.phone || "Keine Telefonnummer")}</div>
+      <div class="badge">${escapeHtml(row.status || "offen")}</div>
+      <div class="small">Antippen, um die Anfrage zu öffnen und zu bearbeiten</div>
+    `;
+
+    item.addEventListener("click", () => showDetail(row));
+    item.addEventListener("keydown", event => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        showDetail(row);
+      }
+    });
+
+    requestList.appendChild(item);
+  });
+}
+
+function showDetail(row) {
+  currentRequest = row;
+  detailView.classList.remove("hidden");
+
+  const statuses = [
+    ["neu", "Neu"],
+    ["offen", "Offen"],
+    ["kontakt", "Kontakt aufgenommen"],
+    ["in_bearbeitung", "In Bearbeitung"],
+    ["angebot", "Angebot erstellt"],
+    ["auftrag", "Auftrag erteilt"],
+    ["erledigt", "Erledigt"]
+  ];
+
+  const currentStatus = String(row.status || "offen");
+
+  if (!statuses.some(option => option[0] === currentStatus)) {
+    statuses.push([currentStatus, currentStatus]);
+  }
+
+  const statusOptions = statuses.map(([value, label]) => `
+    <option value="${escapeHtml(value)}"
+      ${value === currentStatus ? "selected" : ""}>
+      ${escapeHtml(label)}
+    </option>
+  `).join("");
+
+  detailContent.innerHTML = `
+    <form id="requestEditForm" class="detail">
+      <div class="detail-row">
+        <div class="detail-label">Leistung</div>
+        <input name="service" required value="${escapeHtml(row.service || "")}">
+      </div>
+
+      <div class="detail-row">
+        <div class="detail-label">Erstellungsdatum</div>
+        <div class="detail-value">${escapeHtml(formatDate(row.created_at))}</div>
+      </div>
+
+      <div class="detail-row">
+        <div class="detail-label">PLZ</div>
+        <input name="plz" value="${escapeHtml(row.plz || "")}">
+      </div>
+
+      <div class="detail-row">
+        <div class="detail-label">Gebiet / Ort</div>
+        <input name="area" value="${escapeHtml(row.area || "")}">
+      </div>
+
+      <div class="detail-row">
+        <div class="detail-label">Beschreibung</div>
+        <textarea name="description">${escapeHtml(row.description || "")}</textarea>
+      </div>
+
+      <div class="detail-row">
+        <div class="detail-label">Kunde</div>
+        <input name="name" required value="${escapeHtml(row.name || "")}">
+      </div>
+
+      <div class="detail-row">
+        <div class="detail-label">Telefon</div>
+        <input name="phone" type="tel" value="${escapeHtml(row.phone || "")}">
+      </div>
+
+      <div class="detail-row">
+        <div class="detail-label">E-Mail</div>
+        <input name="email" type="email" value="${escapeHtml(row.email || "")}">
+      </div>
+
+      <div class="detail-row">
+        <div class="detail-label">Status ändern</div>
+        <select name="status">${statusOptions}</select>
+      </div>
+
+      <div class="edit-actions">
+        <button type="submit" id="saveRequestBtn">Änderungen speichern</button>
+        <button type="button" class="secondary" id="cancelEditBtn">Abbrechen</button>
+      </div>
+
+      <div id="editMessage" aria-live="polite"></div>
+    </form>
+  `;
+
+  document.getElementById("cancelEditBtn").addEventListener("click", () => {
+    detailView.classList.add("hidden");
+    currentRequest = null;
+  });
+
+  document.getElementById("requestEditForm").addEventListener("submit", saveRequest);
+
+  detailView.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+async function saveRequest(event) {
+  event.preventDefault();
+
+  const row = currentRequest;
+  const form = event.currentTarget;
+  const message = document.getElementById("editMessage");
+  const button = document.getElementById("saveRequestBtn");
+
+  if (!row || row.id == null) {
+    showError(message, "Die Anfrage hat keine erkennbare ID. Speichern nicht möglich.");
+    return;
+  }
+
+  const formData = new FormData(form);
+
+  const changes = {
+    service: String(formData.get("service") || "").trim(),
+    plz: String(formData.get("plz") || "").trim(),
+    area: String(formData.get("area") || "").trim(),
+    description: String(formData.get("description") || "").trim(),
+    name: String(formData.get("name") || "").trim(),
+    phone: String(formData.get("phone") || "").trim(),
+    email: String(formData.get("email") || "").trim(),
+    status: String(formData.get("status") || "offen")
+  };
+
+  button.disabled = true;
+  button.textContent = "Speichert …";
+  message.innerHTML = "";
+
+  try {
+    const { data, error } = await client
+      .from("Bauanfragen")
+      .update(changes)
+      .eq("id", row.id)
+      .select();
+
+    if (error) {
+      showError(message, "Speichern fehlgeschlagen: " + error.message);
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      showError(
+        message,
+        "Es wurde keine Zeile aktualisiert. Prüfe die Supabase-RLS-Regeln und die Berechtigung zum Ändern von Bauanfragen."
+      );
+      return;
+    }
+
+    const savedRow = data[0];
+    currentRequest = savedRow;
+
+    const index = requestCache.findIndex(item => String(item.id) === String(savedRow.id));
+
+    if (index !== -1) {
+      requestCache[index] = savedRow;
+    }
+
+    renderRequests(requestCache);
+    showDetail(savedRow);
+
+    const newMessage = document.getElementById("editMessage");
+    showSuccess(newMessage, "Änderungen wurden gespeichert.");
+
+  } catch (error) {
+    showError(
+      message,
+      "Fehler beim Speichern: " + (error.message || "Unbekannter Fehler")
+    );
+  } finally {
+    const currentButton = document.getElementById("saveRequestBtn");
+
+    if (currentButton) {
+      currentButton.disabled = false;
+      currentButton.textContent = "Änderungen speichern";
+    }
+  }
+}
+
+function showList() {
+  detailView.classList.add("hidden");
+  currentRequest = null;
+}
+
+async function loadFirms() {
+  firmsMessage.innerHTML = "";
+  firmList.innerHTML = '<div class="small">Fachbetriebe werden geladen …</div>';
+
+  const { data, error } = await client
+    .from("fachbetriebe")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    firmList.innerHTML = "";
+    showError(
+      firmsMessage,
+      "Fachbetriebe konnten nicht geladen werden: " + error.message +
+      " Bitte Tabelle, Spalten und Supabase-RLS-Berechtigungen prüfen."
+    );
+    return;
+  }
+
+  firmsMessage.innerHTML = "";
+  firmList.innerHTML = "";
+
+  if (!data || data.length === 0) {
+    firmList.innerHTML =
+      '<div class="success">Keine Fachbetriebe in der Tabelle „fachbetriebe“ gefunden.</div>';
+    return;
+  }
+
+  data.forEach(firm => {
+    const isApproved = firm.freigeschaltet === true;
+    const item = document.createElement("article");
+    item.className = "firm";
+
+    item.innerHTML = `
+      <div class="firm-title">
+        <div class="firm-name">${escapeHtml(firm.firma || firm.firmenname || "Firma ohne Namen")}</div>
+        <span class="badge ${isApproved ? "approved" : "pending"}">
+          ${isApproved ? "Freigeschaltet" : "Wartet auf Freischaltung"}
+        </span>
+      </div>
+
+      <div class="firm-info">👤 Ansprechpartner: ${escapeHtml(firm.inhaber || firm.ansprechpartner || "Keine Angabe")}</div>
+      <div class="firm-info">✉️ ${escapeHtml(firm.email || "Keine E-Mail")}</div>
+      <div class="firm-info">📞 ${escapeHtml(firm.telefon || "Keine Telefonnummer")}</div>
+      <div class="firm-info">📍 ${escapeHtml([firm.plz, firm.ort].filter(Boolean).join(" ") || "Kein Ort angegeben")}</div>
+      <div class="firm-info">🛠️ Leistungen: ${escapeHtml(formatLeistungen(firm.leistungen))}</div>
+      <div class="firm-info">Umkreis: ${escapeHtml(firm.radius_km == null ? "Keine Angabe" : String(firm.radius_km) + " km")}</div>
+      <div class="firm-info">Abo-Status: ${escapeHtml(firm.abo_status || "unbekannt")}</div>
+
+      <div class="firm-actions">
+        <button type="button" data-action="approval">
+          ${isApproved ? "Freischaltung zurücknehmen" : "Betrieb freischalten"}
+        </button>
+      </div>
+    `;
+
+    item.querySelector('[data-action="approval"]').addEventListener("click", event => {
+      setFirmApproval(firm.id, !isApproved, event.currentTarget);
+    });
+
+    firmList.appendChild(item);
+  });
+}
+
+async function setFirmApproval(firmId, approved, button) {
+  if (firmId == null) {
+    showError(firmsMessage, "Dieser Betrieb hat keine ID. Bitte die Tabellenstruktur prüfen.");
+    return;
+  }
+
+  const confirmation = approved
+    ? "Diesen Fachbetrieb freischalten?"
+    : "Die Freischaltung dieses Fachbetriebs zurücknehmen?";
+
+  if (!window.confirm(confirmation)) return;
+
+  button.disabled = true;
+  firmsMessage.innerHTML = "";
+
+  const { error } = await client
+    .from("fachbetriebe")
+    .update({ freigeschaltet: approved })
+    .eq("id", firmId);
+
+  if (error) {
+    showError(firmsMessage, "Änderung fehlgeschlagen: " + error.message);
+    button.disabled = false;
+    return;
+  }
+
+  showSuccess(
+    firmsMessage,
+    approved ? "Fachbetrieb wurde freigeschaltet." : "Freischaltung wurde zurückgenommen."
+  );
+
+  await loadFirms();
+}
+
+function formatLeistungen(value) {
+  if (Array.isArray(value)) return value.join(", ");
+  if (value == null || value === "") return "Keine Angabe";
+  return String(value);
 }
 
 function formatDate(value) {
@@ -188,430 +569,27 @@ function formatDate(value) {
   });
 }
 
-function formatLeistungen(value) {
-  if (Array.isArray(value)) return value.join(", ");
-  if (value == null || value === "") return "Keine Angabe";
-  return String(value);
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
-function showError(element, message) {
-  element.innerHTML =
-    '<div class="error">' + escapeHtml(message) + '</div>';
-}
-
-function showSuccess(element, message) {
-  element.innerHTML =
-    '<div class="success">' + escapeHtml(message) + '</div>';
-}
-
-async function login() {
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value;
-
-  loginMessage.innerHTML = "";
-
-  if (!email || !password) {
-    showError(loginMessage, "Bitte E-Mail und Passwort eingeben.");
-    return;
-  }
-
-  const button = document.getElementById("loginBtn");
-  button.disabled = true;
-
-  try {
-    const { error } = await client.auth.signInWithPassword({
-      email,
-      password
-    });
-
-    if (error) {
-      showError(loginMessage, error.message);
-      return;
-    }
-
-    await updateUI();
-  } catch (error) {
-    showError(loginMessage, error.message || "Anmeldung fehlgeschlagen.");
-  } finally {
-    button.disabled = false;
-  }
-}
-
-async function logout() {
-  const { error } = await client.auth.signOut();
-
-  if (error) {
-    showError(loginMessage, error.message);
-    return;
-  }
-
-  loginBox.classList.remove("hidden");
-  adminBox.classList.add("hidden");
-  loginMessage.innerHTML = "";
-}
-
-async function updateUI() {
-  const { data, error } = await client.auth.getSession();
-
-  if (error) {
-    showError(loginMessage, "Sitzung konnte nicht geprüft werden: " + error.message);
-    return;
-  }
-
-  if (data.session) {
-    loginBox.classList.add("hidden");
-    adminBox.classList.remove("hidden");
-    await showSection(currentSection);
-  } else {
-    loginBox.classList.remove("hidden");
-    adminBox.classList.add("hidden");
-  }
-}
-
-async function showSection(section) {
-  currentSection = section;
-
-  const showRequests = section === "requests";
-
-  requestsSection.classList.toggle("hidden", !showRequests);
-  firmsSection.classList.toggle("hidden", showRequests);
-
-  requestsTab.classList.toggle("active", showRequests);
-  firmsTab.classList.toggle("active", !showRequests);
-
-  if (showRequests) {
-    await loadRequests();
-  } else {
-    await loadFirms();
-  }
-}
-
-/* BAUANFRAGEN
-   WICHTIG: Der Tabellenname ist kleingeschrieben:
-   public.bauanfragen
-*/
-async function loadRequests() {
-  requestsMessage.innerHTML = "";
-  requestList.innerHTML = "";
-  detailView.classList.add("hidden");
-
-  showSuccess(requestsMessage, "Bauanfragen werden geladen …");
-
-  try {
-    const { data, error } = await client
-      .from("bauanfragen")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      showError(
-        requestsMessage,
-        "Bauanfragen konnten nicht geladen werden: " + error.message
-      );
-      return;
-    }
-
-    requestsMessage.innerHTML = "";
-
-    if (!data || data.length === 0) {
-      showSuccess(requestList, "Noch keine Bauanfragen vorhanden.");
-      return;
-    }
-
-    data.forEach(row => {
-      const item = document.createElement("div");
-      item.className = "request";
-
-      item.innerHTML = `
-        <div class="request-title">
-          <div class="request-service">
-            ${escapeHtml(row.service || "Sonstige Anfrage")}
-          </div>
-          <div class="request-date">
-            ${escapeHtml(formatDate(row.created_at))}
-          </div>
-        </div>
-        <div class="request-info">
-          📍 ${escapeHtml(row.plz || "")}${row.area ? " – " + escapeHtml(row.area) : ""}
-        </div>
-        <div class="request-info">👤 ${escapeHtml(row.name || "")}</div>
-        <div class="request-info">📞 ${escapeHtml(row.phone || "")}</div>
-        <div class="badge">${escapeHtml(row.status || "offen")}</div>
-      `;
-
-      item.addEventListener("click", () => showDetail(row));
-      requestList.appendChild(item);
-    });
-  } catch (error) {
-    showError(
-      requestsMessage,
-      "Unerwarteter Fehler beim Laden: " +
-      (error.message || "Unbekannter Fehler")
-    );
-  }
-}
-
-function showDetail(row) {
-  detailView.classList.remove("hidden");
-
-  const phone = row.phone || "";
-  const email = row.email || "";
-
-  detailContent.innerHTML = `
-    <div class="detail">
-      <div class="detail-row">
-        <div class="detail-label">Leistung</div>
-        <div class="detail-value">${escapeHtml(row.service || "")}</div>
-      </div>
-
-      <div class="detail-row">
-        <div class="detail-label">Datum</div>
-        <div class="detail-value">${escapeHtml(formatDate(row.created_at))}</div>
-      </div>
-
-      <div class="detail-row">
-        <div class="detail-label">PLZ</div>
-        <div class="detail-value">${escapeHtml(row.plz || "")}</div>
-      </div>
-
-      <div class="detail-row">
-        <div class="detail-label">Gebiet / Ort</div>
-        <div class="detail-value">${escapeHtml(row.area || "Keine Angabe")}</div>
-      </div>
-
-      <div class="detail-row">
-        <div class="detail-label">Beschreibung</div>
-        <div class="detail-value">
-          ${escapeHtml(row.description || "Keine Beschreibung angegeben.")}
-        </div>
-      </div>
-
-      <div class="detail-row">
-        <div class="detail-label">Kunde</div>
-        <div class="detail-value">${escapeHtml(row.name || "")}</div>
-      </div>
-
-      <div class="detail-row">
-        <div class="detail-label">Telefon</div>
-        <div class="detail-value">
-          ${phone
-            ? `<a href="tel:${escapeHtml(phone)}" style="color:#ffd000">${escapeHtml(phone)}</a>`
-            : "Keine Telefonnummer angegeben."}
-        </div>
-      </div>
-
-      <div class="detail-row">
-        <div class="detail-label">E-Mail</div>
-        <div class="detail-value">
-          ${email
-            ? `<a href="mailto:${escapeHtml(email)}" style="color:#ffd000">${escapeHtml(email)}</a>`
-            : "Keine E-Mail angegeben."}
-        </div>
-      </div>
-
-      <div class="detail-row">
-        <div class="detail-label">Status</div>
-        <div class="detail-value">
-          <span class="badge">${escapeHtml(row.status || "offen")}</span>
-        </div>
-      </div>
-    </div>
-  `;
-
-  detailView.scrollIntoView({
-    behavior: "smooth",
-    block: "start"
-  });
-}
-
-function showList() {
-  detailView.classList.add("hidden");
-}
-
-/* FACHBETRIEBE */
-async function loadFirms() {
-  firmsMessage.innerHTML = "";
-  firmList.innerHTML = "";
-
-  showSuccess(firmsMessage, "Fachbetriebe werden geladen …");
-
-  try {
-    const { data, error } = await client
-      .from("fachbetriebe")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      showError(
-        firmsMessage,
-        "Fachbetriebe konnten nicht geladen werden: " + error.message
-      );
-      return;
-    }
-
-    firmsMessage.innerHTML = "";
-
-    if (!data || data.length === 0) {
-      showSuccess(
-        firmList,
-        "Keine Fachbetriebe in der Tabelle fachbetriebe gefunden."
-      );
-      return;
-    }
-
-    data.forEach(firm => {
-      const isApproved = firm.freigeschaltet === true;
-
-      const item = document.createElement("article");
-      item.className = "firm";
-
-      item.innerHTML = `
-        <div class="firm-title">
-          <div class="firm-name">
-            ${escapeHtml(firm.firma || firm.firmenname || "Firma ohne Namen")}
-          </div>
-          <span class="badge ${isApproved ? "approved" : "pending"}">
-            ${isApproved ? "Freigeschaltet" : "Wartet auf Freischaltung"}
-          </span>
-        </div>
-
-        <div class="firm-info">
-          👤 Ansprechpartner:
-          ${escapeHtml(firm.inhaber || firm.ansprechpartner || "Keine Angabe")}
-        </div>
-
-        <div class="firm-info">
-          ✉️ ${escapeHtml(firm.email || "Keine E-Mail")}
-        </div>
-
-        <div class="firm-info">
-          📞 ${escapeHtml(firm.telefon || "Keine Telefonnummer")}
-        </div>
-
-        <div class="firm-info">
-          📍 ${escapeHtml([firm.plz, firm.ort].filter(Boolean).join(" ") || "Kein Ort angegeben")}
-        </div>
-
-        <div class="firm-info">
-          🛠️ Leistungen: ${escapeHtml(formatLeistungen(firm.leistungen))}
-        </div>
-
-        <div class="firm-info">
-          Umkreis:
-          ${escapeHtml(firm.radius_km == null ? "Keine Angabe" : String(firm.radius_km) + " km")}
-        </div>
-
-        <div class="firm-info">
-          Abo-Status: ${escapeHtml(firm.abo_status || "unbekannt")}
-        </div>
-
-        <div class="firm-actions">
-          <button type="button" data-action="approval">
-            ${isApproved ? "Freischaltung zurücknehmen" : "Betrieb freischalten"}
-          </button>
-        </div>
-      `;
-
-      const actionButton = item.querySelector('button[data-action="approval"]');
-
-      actionButton.addEventListener("click", () => {
-        setFirmApproval(firm.id, !isApproved, actionButton);
-      });
-
-      firmList.appendChild(item);
-    });
-  } catch (error) {
-    showError(
-      firmsMessage,
-      "Unerwarteter Fehler beim Laden: " +
-      (error.message || "Unbekannter Fehler")
-    );
-  }
-}
-
-async function setFirmApproval(firmId, approved, button) {
-  if (!firmId) {
-    showError(
-      firmsMessage,
-      "Dieser Betrieb hat keine ID. Bitte die Tabellenstruktur prüfen."
-    );
-    return;
-  }
-
-  const confirmation = approved
-    ? "Diesen Fachbetrieb freischalten?"
-    : "Die Freischaltung dieses Fachbetriebs zurücknehmen?";
-
-  if (!window.confirm(confirmation)) return;
-
-  button.disabled = true;
-  showSuccess(firmsMessage, "Freischaltung wird gespeichert …");
-
-  try {
-    const { error } = await client
-      .from("fachbetriebe")
-      .update({ freigeschaltet: approved })
-      .eq("id", firmId);
-
-    if (error) {
-      showError(
-        firmsMessage,
-        "Änderung fehlgeschlagen: " + error.message +
-        ". Bitte Berechtigungen und RLS-Regeln prüfen."
-      );
-      button.disabled = false;
-      return;
-    }
-
-    showSuccess(
-      firmsMessage,
-      approved
-        ? "Fachbetrieb wurde freigeschaltet."
-        : "Freischaltung wurde zurückgenommen."
-    );
-
-    await loadFirms();
-  } catch (error) {
-    showError(
-      firmsMessage,
-      "Unerwarteter Fehler: " +
-      (error.message || "Unbekannter Fehler")
-    );
-    button.disabled = false;
-  }
-}
-
-/* BUTTONS UND AUTH */
-document.getElementById("loginBtn")
-  .addEventListener("click", login);
-
-document.getElementById("password")
-  .addEventListener("keydown", event => {
-    if (event.key === "Enter") login();
-  });
-
-document.getElementById("logoutBtn")
-  .addEventListener("click", logout);
-
-document.getElementById("refreshRequestsBtn")
-  .addEventListener("click", loadRequests);
-
-document.getElementById("refreshFirmsBtn")
-  .addEventListener("click", loadFirms);
-
-document.getElementById("backBtn")
-  .addEventListener("click", showList);
+document.getElementById("loginBtn").addEventListener("click", login);
+document.getElementById("logoutBtn").addEventListener("click", logout);
+document.getElementById("refreshRequestsBtn").addEventListener("click", loadRequests);
+document.getElementById("refreshFirmsBtn").addEventListener("click", loadFirms);
+document.getElementById("backBtn").addEventListener("click", showList);
 
 requestsTab.addEventListener("click", () => showSection("requests"));
 firmsTab.addEventListener("click", () => showSection("firms"));
 
-client.auth.onAuthStateChange((_event, session) => {
-  if (session) {
-    loginBox.classList.add("hidden");
-    adminBox.classList.remove("hidden");
-  } else {
-    loginBox.classList.remove("hidden");
-    adminBox.classList.add("hidden");
+client.auth.onAuthStateChange((event, session) => {
+  if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "TOKEN_REFRESHED") {
+    setTimeout(() => updateUI(), 0);
   }
 });
 
