@@ -1,295 +1,172 @@
 
-<!doctype html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Riemer BauConnect – Admin</title>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
 *{box-sizing:border-box}
-body{
-  margin:0;background:#171717;color:#fff;
-  font-family:Arial,sans-serif
-}
-.wrap{max-width:1100px;margin:auto;padding:18px}
-h1{margin:0 0 6px;font-size:25px}
-h2{font-size:20px}
-h3{margin-top:0}
-.yellow{color:#ffd400}
-.small{color:#aaa;margin-bottom:18px}
-.card{
-  background:#222;border:1px solid #3a3a3a;
-  border-radius:14px;padding:16px;margin-bottom:18px
-}
-input,button{
-  width:100%;padding:13px;border-radius:9px;
-  font-size:16px
-}
-input{
-  background:#111;color:#fff;border:1px solid #555;
-  margin:6px 0 10px
-}
-button{
-  border:0;background:#ffd400;color:#111;
-  font-weight:700;margin-top:6px;cursor:pointer
-}
+body{margin:0;background:#171717;color:#fff;font-family:Arial,sans-serif}
+.wrap{max-width:1100px;margin:auto;padding:24px}
+h1{margin:0;font-size:36px}
+.brand{color:#ffd000}
+.subtitle{color:#aaa;font-size:20px;margin:8px 0 30px}
+.card{background:#222;border:1px solid #3a3a3a;border-radius:20px;padding:24px;margin-bottom:20px}
+input,button{width:100%;padding:15px;border-radius:12px;border:1px solid #444;font-size:16px}
+input{background:#111;color:#fff;margin:8px 0 15px}
+button{background:#ffd000;color:#111;border:0;font-weight:bold;cursor:pointer}
+button:disabled{opacity:.55;cursor:wait}
 button.secondary{background:#333;color:#fff}
-button:disabled{opacity:.5}
+button.danger{background:#7b2929;color:#fff}
 .hidden{display:none!important}
-.error{
-  background:#5a2020;padding:12px;border-radius:9px;
-  margin:10px 0;overflow-wrap:anywhere
-}
-.success{
-  background:#245b2d;padding:12px;border-radius:9px;
-  margin:10px 0
-}
-.muted{color:#aaa}
-.top{
-  display:flex;gap:10px;justify-content:space-between;
-  align-items:center
-}
-.top button{width:auto;padding:10px 16px}
-.stats{
-  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:10px;margin-bottom:18px
-}
-.stat{
-  background:#222;border:1px solid #3a3a3a;
-  border-radius:12px;padding:14px
-}
-.stat strong{display:block;font-size:25px;color:#ffd400}
-.stat span{font-size:13px;color:#bbb}
-.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
-.tabs button{width:auto;margin:0;padding:12px}
-.tabs button.active{background:#ffd400;color:#111}
-.tablewrap{overflow-x:auto}
-table{
-  width:100%;border-collapse:collapse;
-  min-width:760px
-}
-th,td{
-  text-align:left;padding:10px;
-  border-bottom:1px solid #3a3a3a;
-  vertical-align:top;overflow-wrap:anywhere
-}
-th{color:#ffd400}
-.badge{
-  display:inline-block;padding:4px 8px;
-  border-radius:20px;background:#333
-}
-.section-title{
-  display:flex;justify-content:space-between;
-  align-items:center;gap:10px;flex-wrap:wrap
-}
-.section-title button{width:auto}
+.error{background:#6b2222;padding:15px;border-radius:12px;margin-top:15px;overflow-wrap:anywhere}
+.success{background:#235c32;padding:15px;border-radius:12px;margin-top:15px;overflow-wrap:anywhere}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:20px}
+.topbar button{width:auto;padding:12px 20px}
+.tabs{display:flex;gap:10px;margin:20px 0;flex-wrap:wrap}
+.tabs button{width:auto;flex:1;min-width:150px}
+.tabs button.active{outline:2px solid #fff}
+.request,.firm{background:#292929;border:1px solid #444;border-radius:15px;padding:18px;margin-top:15px}
+.request{cursor:pointer}
+.request:hover,.firm:hover{border-color:#ffd000}
+.request-title,.firm-title{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.request-service,.firm-name{color:#ffd000;font-size:20px;font-weight:bold;overflow-wrap:anywhere}
+.request-date,.muted{color:#999;font-size:14px}
+.request-info,.firm-info{color:#ccc;margin-top:8px;overflow-wrap:anywhere}
+.badge{display:inline-block;background:#333;padding:6px 10px;border-radius:8px;margin-top:10px}
+.badge.pending{background:#72551b}
+.badge.approved{background:#235c32}
+.firm-actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+.firm-actions button{width:auto;flex:1;min-width:170px}
+.detail{margin-top:20px}
+.detail-row{border-bottom:1px solid #3b3b3b;padding:14px 0}
+.detail-label{color:#ffd000;font-size:14px;margin-bottom:5px}
+.detail-value{font-size:17px;word-break:break-word}
+.back{margin-bottom:15px}
+.small{color:#aaa;margin-top:6px}
+
 @media(max-width:600px){
-  .wrap{padding:12px}
-  h1{font-size:21px}
-  .stats{grid-template-columns:1fr}
+  .wrap{padding:16px}
+  h1{font-size:30px}
+  .topbar{align-items:flex-start;flex-direction:column}
+  .topbar button{width:100%}
+  .request-title,.firm-title{flex-direction:column}
+  .firm-actions{flex-direction:column}
+  .firm-actions button{width:100%}
+  .card{padding:18px}
 }
 </style>
 </head>
 
 <body>
 <div class="wrap">
+  <h1>RIEMER <span class="brand">BAUCONNECT</span></h1>
+  <div class="subtitle">Verwaltungsbereich – Bauanfragen &amp; Fachbetriebe</div>
 
-  <div class="top">
-    <div>
-      <h1>RIEMER <span class="yellow">BAUCONNECT</span></h1>
-      <div class="small">Admin – Verwaltung und Freischaltungen</div>
-    </div>
-    <button id="logoutBtn" class="secondary hidden">
-      Abmelden
-    </button>
-  </div>
-
-  <!-- LOGIN -->
-  <section id="loginCard" class="card">
+  <div id="loginBox" class="card">
     <h2>Admin-Login</h2>
 
     <label for="email">E-Mail</label>
     <input id="email" type="email"
-      autocomplete="username"
-      placeholder="Deine Admin-E-Mail">
+      placeholder="E-Mail-Adresse" autocomplete="username">
 
     <label for="password">Passwort</label>
     <input id="password" type="password"
-      autocomplete="current-password"
-      placeholder="Dein Passwort">
+      placeholder="Passwort" autocomplete="current-password">
 
-    <button id="loginBtn">Anmelden</button>
-    <div id="loginMsg" aria-live="polite"></div>
-  </section>
+    <button id="loginBtn" type="button">Anmelden</button>
+    <div id="loginMessage" aria-live="polite"></div>
+  </div>
 
-  <!-- ADMIN -->
-  <main id="adminCard" class="hidden">
-
-    <div class="stats">
-      <div class="stat">
-        <strong id="countRequests">–</strong>
-        <span>Bauanfragen</span>
+  <div id="adminBox" class="hidden">
+    <div class="topbar">
+      <div>
+        <h2 style="margin:0">Verwaltung</h2>
+        <div class="small">Bauanfragen und registrierte Fachbetriebe</div>
       </div>
-      <div class="stat">
-        <strong id="countFachbetriebe">–</strong>
-        <span>Fachbetriebe</span>
-      </div>
-      <div class="stat">
-        <strong id="countPartner">–</strong>
-        <span>Partnerbewerbungen</span>
-      </div>
+      <button id="logoutBtn" class="secondary" type="button">Abmelden</button>
     </div>
 
     <div class="tabs">
-      <button class="active" data-section="requestsSection">
-        Bauanfragen
-      </button>
-      <button data-section="fachSection">
-        Fachbetriebe
-      </button>
-      <button data-section="partnerSection">
-        Partnerbewerbungen
-      </button>
+      <button id="requestsTab" class="active" type="button">Bauanfragen</button>
+      <button id="firmsTab" type="button">Fachbetriebe</button>
     </div>
 
-    <div id="globalMsg" aria-live="polite"></div>
-
-    <!-- BAUANFRAGEN -->
     <section id="requestsSection" class="card">
-      <div class="section-title">
-        <h2>Bauanfragen</h2>
-        <button class="secondary" id="refreshRequests">
-          Aktualisieren
+      <h2>Bauanfragen</h2>
+      <div class="small">Eingegangene Kundenanfragen</div>
+
+      <button id="refreshRequestsBtn" style="margin-top:18px" type="button">
+        Bauanfragen aktualisieren
+      </button>
+
+      <div id="requestsMessage" aria-live="polite"></div>
+      <div id="requestList"></div>
+
+      <div id="detailView" class="hidden">
+        <button id="backBtn" class="secondary back"
+          style="margin-top:18px" type="button">
+          ← Zurück zu den Bauanfragen
         </button>
-      </div>
-
-      <div id="requestsMsg"></div>
-
-      <div class="tablewrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Datum</th>
-              <th>Leistung / Beschreibung</th>
-              <th>PLZ</th>
-              <th>Ort</th>
-              <th>Name</th>
-              <th>Telefon</th>
-              <th>E-Mail</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody id="requestsBody">
-            <tr><td colspan="8">Noch nicht geladen.</td></tr>
-          </tbody>
-        </table>
+        <h2>Bauanfrage</h2>
+        <div id="detailContent"></div>
       </div>
     </section>
 
-    <!-- FACHBETRIEBE -->
-    <section id="fachSection" class="card hidden">
-      <div class="section-title">
-        <h2>Registrierte Fachbetriebe</h2>
-        <button class="secondary" id="refreshFach">
-          Aktualisieren
-        </button>
+    <section id="firmsSection" class="card hidden">
+      <h2>Fachbetriebe</h2>
+      <div class="small">
+        Registrierte Firmen prüfen und Freischaltung verwalten.
       </div>
 
-      <p class="muted">
-        Datenquelle: Supabase-Tabelle fachbetriebe.
-      </p>
+      <button id="refreshFirmsBtn" style="margin-top:18px" type="button">
+        Fachbetriebe aktualisieren
+      </button>
 
-      <div id="fachMsg"></div>
-
-      <div class="tablewrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Firma</th>
-              <th>Ansprechpartner</th>
-              <th>Telefon</th>
-              <th>E-Mail</th>
-              <th>PLZ / Ort</th>
-              <th>Leistungen</th>
-              <th>Status</th>
-              <th>Registriert</th>
-            </tr>
-          </thead>
-          <tbody id="fachBody">
-            <tr><td colspan="8">Noch nicht geladen.</td></tr>
-          </tbody>
-        </table>
-      </div>
+      <div id="firmsMessage" aria-live="polite"></div>
+      <div id="firmList"></div>
     </section>
-
-    <!-- PARTNERBEWERBUNGEN -->
-    <section id="partnerSection" class="card hidden">
-      <div class="section-title">
-        <h2>Partnerbewerbungen</h2>
-        <button class="secondary" id="refreshPartner">
-          Aktualisieren
-        </button>
-      </div>
-
-      <p class="muted">
-        Datenquelle: Supabase-Tabelle partnerbetriebe.
-      </p>
-
-      <div id="partnerMsg"></div>
-
-      <div class="tablewrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Firma</th>
-              <th>Ansprechpartner</th>
-              <th>Telefon</th>
-              <th>E-Mail</th>
-              <th>PLZ / Region</th>
-              <th>Leistungen</th>
-              <th>Website</th>
-              <th>Status</th>
-              <th>Datum</th>
-            </tr>
-          </thead>
-          <tbody id="partnerBody">
-            <tr><td colspan="9">Noch nicht geladen.</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-  </main>
+  </div>
 </div>
 
 <script>
 "use strict";
 
-/* SUPABASE */
 const SUPABASE_URL =
   "https://ehzugjmltfcvllftpjpp.supabase.co";
 
-const SUPABASE_PUBLISHABLE_KEY =
+const SUPABASE_KEY =
   "sb_publishable_Ieo0pxh7y8L4nr2xMS7fQQ_mPonnlOm";
 
 const client = window.supabase.createClient(
   SUPABASE_URL,
-  SUPABASE_PUBLISHABLE_KEY
+  SUPABASE_KEY
 );
 
-/* ELEMENTE */
-const loginCard = document.getElementById("loginCard");
-const adminCard = document.getElementById("adminCard");
-const logoutBtn = document.getElementById("logoutBtn");
-const loginMsg = document.getElementById("loginMsg");
+const loginBox = document.getElementById("loginBox");
+const adminBox = document.getElementById("adminBox");
+const loginMessage = document.getElementById("loginMessage");
 
-let loading = false;
-let currentSection = "requestsSection";
+const requestsMessage = document.getElementById("requestsMessage");
+const firmsMessage = document.getElementById("firmsMessage");
 
-/* SICHERE HTML-AUSGABE */
+const requestList = document.getElementById("requestList");
+const firmList = document.getElementById("firmList");
+
+const detailView = document.getElementById("detailView");
+const detailContent = document.getElementById("detailContent");
+
+const requestsSection = document.getElementById("requestsSection");
+const firmsSection = document.getElementById("firmsSection");
+
+const requestsTab = document.getElementById("requestsTab");
+const firmsTab = document.getElementById("firmsTab");
+
+let currentSection = "requests";
+
 function escapeHtml(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -299,386 +176,445 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
-function valueOf(row, ...keys) {
-  for (const key of keys) {
-    if (
-      row &&
-      row[key] !== undefined &&
-      row[key] !== null &&
-      row[key] !== ""
-    ) {
-      return row[key];
-    }
-  }
-  return "—";
-}
-
 function formatDate(value) {
-  if (!value) return "—";
-
+  if (!value) return "";
   const date = new Date(value);
 
-  if (Number.isNaN(date.getTime())) {
-    return "—";
-  }
+  if (Number.isNaN(date.getTime())) return "";
 
-  return date.toLocaleString("de-DE");
-}
-
-function cell(value) {
-  return "<td>" + escapeHtml(value) + "</td>";
-}
-
-function badge(value) {
-  return '<span class="badge">' +
-    escapeHtml(value) + "</span>";
-}
-
-function showError(elementId, message) {
-  document.getElementById(elementId).innerHTML =
-    '<div class="error">' + escapeHtml(message) + "</div>";
-}
-
-function showEmpty(elementId, colspan, message) {
-  document.getElementById(elementId).innerHTML =
-    '<tr><td colspan="' + colspan +
-    '" class="muted">' + escapeHtml(message) + "</td></tr>";
-}
-
-function showLoading(elementId, colspan) {
-  showEmpty(elementId, colspan, "Daten werden geladen …");
-}
-
-function setCount(elementId, count) {
-  document.getElementById(elementId).textContent =
-    String(count);
-}
-
-/* BEREICH WECHSELN */
-function showSection(sectionId) {
-  currentSection = sectionId;
-
-  document.querySelectorAll(
-    "#adminCard > section.card"
-  ).forEach(section => {
-    section.classList.toggle(
-      "hidden",
-      section.id !== sectionId
-    );
-  });
-
-  document.querySelectorAll(".tabs button").forEach(button => {
-    button.classList.toggle(
-      "active",
-      button.dataset.section === sectionId
-    );
+  return date.toLocaleString("de-DE", {
+    dateStyle: "short",
+    timeStyle: "medium"
   });
 }
 
-document.querySelectorAll(".tabs button").forEach(button => {
-  button.addEventListener("click", () => {
-    showSection(button.dataset.section);
-  });
-});
-
-/* BAUANFRAGEN */
-async function loadRequests() {
-  const target = "requestsBody";
-  document.getElementById("requestsMsg").innerHTML = "";
-  showLoading(target, 8);
-
-  const { data, error } = await client
-    .from("bauanfragen")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    showEmpty(target, 8, "Bauanfragen konnten nicht geladen werden.");
-    showError(
-      "requestsMsg",
-      "Supabase-Fehler: " + error.message
-    );
-    return;
-  }
-
-  setCount("countRequests", data.length);
-
-  if (!data.length) {
-    showEmpty(target, 8, "Noch keine Bauanfragen vorhanden.");
-    return;
-  }
-
-  document.getElementById(target).innerHTML = data.map(row => {
-    const date = formatDate(row.created_at);
-    const description = valueOf(row, "description");
-
-    return `
-      <tr>
-        ${cell(date)}
-        <td>
-          <strong>${escapeHtml(valueOf(row, "service"))}</strong>
-          <br>
-          <span class="muted">${escapeHtml(
-            description === "—" ? "" : description
-          )}</span>
-        </td>
-        ${cell(valueOf(row, "plz"))}
-        ${cell(valueOf(row, "area", "ort"))}
-        ${cell(valueOf(row, "name"))}
-        ${cell(valueOf(row, "phone", "telefon"))}
-        ${cell(valueOf(row, "email"))}
-        <td>${badge(valueOf(row, "status"))}</td>
-      </tr>
-    `;
-  }).join("");
+function formatLeistungen(value) {
+  if (Array.isArray(value)) return value.join(", ");
+  if (value == null || value === "") return "Keine Angabe";
+  return String(value);
 }
 
-/* FACHBETRIEBE */
-async function loadFachbetriebe() {
-  const target = "fachBody";
-  document.getElementById("fachMsg").innerHTML = "";
-  showLoading(target, 8);
-
-  const { data, error } = await client
-    .from("fachbetriebe")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    showEmpty(target, 8, "Fachbetriebe konnten nicht geladen werden.");
-    showError(
-      "fachMsg",
-      "Supabase-Fehler: " + error.message
-    );
-    setCount("countFachbetriebe", "!");
-    return;
-  }
-
-  setCount("countFachbetriebe", data.length);
-
-  if (!data.length) {
-    showEmpty(
-      target,
-      8,
-      "Keine Fachbetriebe in dieser Tabelle gefunden. Prüfe, ob das Registrierungsformular seine Daten hier speichert."
-    );
-    return;
-  }
-
-  document.getElementById(target).innerHTML = data.map(row => {
-    const status =
-      row.abo_status ||
-      row.status ||
-      (
-        row.freigeschaltet === true ? "Freigeschaltet" :
-        row.aktiv === true ? "Aktiv" :
-        "Nicht freigeschaltet"
-      );
-
-    return `
-      <tr>
-        ${cell(valueOf(row, "firmenname", "firma"))}
-        ${cell(valueOf(row, "ansprechpartner", "inhaber"))}
-        ${cell(valueOf(row, "telefon", "phone"))}
-        ${cell(valueOf(row, "email"))}
-        ${cell(
-          String(valueOf(row, "plz")) +
-          " / " +
-          String(valueOf(row, "ort", "region"))
-        )}
-        ${cell(valueOf(row, "leistungen"))}
-        <td>${badge(status)}</td>
-        ${cell(formatDate(row.created_at))}
-      </tr>
-    `;
-  }).join("");
+function showError(element, message) {
+  element.innerHTML =
+    '<div class="error">' + escapeHtml(message) + '</div>';
 }
 
-/* PARTNERBEWERBUNGEN */
-async function loadPartnerbetriebe() {
-  const target = "partnerBody";
-  document.getElementById("partnerMsg").innerHTML = "";
-  showLoading(target, 9);
-
-  const { data, error } = await client
-    .from("partnerbetriebe")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    showEmpty(
-      target,
-      9,
-      "Partnerbewerbungen konnten nicht geladen werden."
-    );
-    showError(
-      "partnerMsg",
-      "Supabase-Fehler: " + error.message
-    );
-    setCount("countPartner", "!");
-    return;
-  }
-
-  setCount("countPartner", data.length);
-
-  if (!data.length) {
-    showEmpty(
-      target,
-      9,
-      "Keine Partnerbewerbungen vorhanden."
-    );
-    return;
-  }
-
-  document.getElementById(target).innerHTML = data.map(row => {
-    return `
-      <tr>
-        ${cell(valueOf(row, "firma", "firmenname"))}
-        ${cell(valueOf(row, "ansprechpartner", "inhaber"))}
-        ${cell(valueOf(row, "telefon", "phone"))}
-        ${cell(valueOf(row, "email"))}
-        ${cell(
-          String(valueOf(row, "plz")) +
-          " / " +
-          String(valueOf(row, "region", "ort"))
-        )}
-        ${cell(valueOf(row, "leistungen"))}
-        <td>${escapeHtml(valueOf(row, "website"))}</td>
-        <td>${badge(valueOf(row, "status"))}</td>
-        ${cell(formatDate(row.created_at))}
-      </tr>
-    `;
-  }).join("");
+function showSuccess(element, message) {
+  element.innerHTML =
+    '<div class="success">' + escapeHtml(message) + '</div>';
 }
 
-/* ALLE BEREICHE AKTUALISIEREN */
-async function refreshAll() {
-  if (loading) return;
+async function login() {
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
 
-  loading = true;
+  loginMessage.innerHTML = "";
 
-  const buttons = document.querySelectorAll(
-    "#adminCard button"
-  );
+  if (!email || !password) {
+    showError(loginMessage, "Bitte E-Mail und Passwort eingeben.");
+    return;
+  }
 
-  buttons.forEach(button => {
-    button.disabled = true;
-  });
+  const button = document.getElementById("loginBtn");
+  button.disabled = true;
 
   try {
-    await Promise.all([
-      loadRequests(),
-      loadFachbetriebe(),
-      loadPartnerbetriebe()
-    ]);
-  } catch (error) {
-    document.getElementById("globalMsg").innerHTML =
-      '<div class="error">Fehler beim Aktualisieren: ' +
-      escapeHtml(error.message) + "</div>";
-  } finally {
-    buttons.forEach(button => {
-      button.disabled = false;
+    const { error } = await client.auth.signInWithPassword({
+      email,
+      password
     });
-    loading = false;
+
+    if (error) {
+      showError(loginMessage, error.message);
+      return;
+    }
+
+    await updateUI();
+  } catch (error) {
+    showError(loginMessage, error.message || "Anmeldung fehlgeschlagen.");
+  } finally {
+    button.disabled = false;
   }
 }
 
-/* LOGIN-STATUS */
+async function logout() {
+  const { error } = await client.auth.signOut();
+
+  if (error) {
+    showError(loginMessage, error.message);
+    return;
+  }
+
+  loginBox.classList.remove("hidden");
+  adminBox.classList.add("hidden");
+  loginMessage.innerHTML = "";
+}
+
 async function updateUI() {
   const { data, error } = await client.auth.getSession();
 
   if (error) {
-    loginMsg.innerHTML =
-      '<div class="error">Sitzung konnte nicht geprüft werden.</div>';
+    showError(loginMessage, "Sitzung konnte nicht geprüft werden: " + error.message);
     return;
   }
 
   if (data.session) {
-    loginCard.classList.add("hidden");
-    adminCard.classList.remove("hidden");
-    logoutBtn.classList.remove("hidden");
-
-    await refreshAll();
+    loginBox.classList.add("hidden");
+    adminBox.classList.remove("hidden");
+    await showSection(currentSection);
   } else {
-    loginCard.classList.remove("hidden");
-    adminCard.classList.add("hidden");
-    logoutBtn.classList.add("hidden");
+    loginBox.classList.remove("hidden");
+    adminBox.classList.add("hidden");
   }
 }
 
-/* ANMELDEN */
-document.getElementById("loginBtn").addEventListener(
-  "click",
-  async () => {
-    loginMsg.innerHTML = "";
+async function showSection(section) {
+  currentSection = section;
 
-    const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value;
+  const showRequests = section === "requests";
 
-    if (!email || !password) {
-      loginMsg.innerHTML =
-        '<div class="error">Bitte E-Mail und Passwort eingeben.</div>';
+  requestsSection.classList.toggle("hidden", !showRequests);
+  firmsSection.classList.toggle("hidden", showRequests);
+
+  requestsTab.classList.toggle("active", showRequests);
+  firmsTab.classList.toggle("active", !showRequests);
+
+  if (showRequests) {
+    await loadRequests();
+  } else {
+    await loadFirms();
+  }
+}
+
+/* BAUANFRAGEN
+   WICHTIG: Der Tabellenname ist kleingeschrieben:
+   public.bauanfragen
+*/
+async function loadRequests() {
+  requestsMessage.innerHTML = "";
+  requestList.innerHTML = "";
+  detailView.classList.add("hidden");
+
+  showSuccess(requestsMessage, "Bauanfragen werden geladen …");
+
+  try {
+    const { data, error } = await client
+      .from("bauanfragen")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      showError(
+        requestsMessage,
+        "Bauanfragen konnten nicht geladen werden: " + error.message
+      );
       return;
     }
 
-    const button = document.getElementById("loginBtn");
-    button.disabled = true;
+    requestsMessage.innerHTML = "";
 
-    try {
-      const { error } = await client.auth.signInWithPassword({
-        email,
-        password
+    if (!data || data.length === 0) {
+      showSuccess(requestList, "Noch keine Bauanfragen vorhanden.");
+      return;
+    }
+
+    data.forEach(row => {
+      const item = document.createElement("div");
+      item.className = "request";
+
+      item.innerHTML = `
+        <div class="request-title">
+          <div class="request-service">
+            ${escapeHtml(row.service || "Sonstige Anfrage")}
+          </div>
+          <div class="request-date">
+            ${escapeHtml(formatDate(row.created_at))}
+          </div>
+        </div>
+        <div class="request-info">
+          📍 ${escapeHtml(row.plz || "")}${row.area ? " – " + escapeHtml(row.area) : ""}
+        </div>
+        <div class="request-info">👤 ${escapeHtml(row.name || "")}</div>
+        <div class="request-info">📞 ${escapeHtml(row.phone || "")}</div>
+        <div class="badge">${escapeHtml(row.status || "offen")}</div>
+      `;
+
+      item.addEventListener("click", () => showDetail(row));
+      requestList.appendChild(item);
+    });
+  } catch (error) {
+    showError(
+      requestsMessage,
+      "Unerwarteter Fehler beim Laden: " +
+      (error.message || "Unbekannter Fehler")
+    );
+  }
+}
+
+function showDetail(row) {
+  detailView.classList.remove("hidden");
+
+  const phone = row.phone || "";
+  const email = row.email || "";
+
+  detailContent.innerHTML = `
+    <div class="detail">
+      <div class="detail-row">
+        <div class="detail-label">Leistung</div>
+        <div class="detail-value">${escapeHtml(row.service || "")}</div>
+      </div>
+
+      <div class="detail-row">
+        <div class="detail-label">Datum</div>
+        <div class="detail-value">${escapeHtml(formatDate(row.created_at))}</div>
+      </div>
+
+      <div class="detail-row">
+        <div class="detail-label">PLZ</div>
+        <div class="detail-value">${escapeHtml(row.plz || "")}</div>
+      </div>
+
+      <div class="detail-row">
+        <div class="detail-label">Gebiet / Ort</div>
+        <div class="detail-value">${escapeHtml(row.area || "Keine Angabe")}</div>
+      </div>
+
+      <div class="detail-row">
+        <div class="detail-label">Beschreibung</div>
+        <div class="detail-value">
+          ${escapeHtml(row.description || "Keine Beschreibung angegeben.")}
+        </div>
+      </div>
+
+      <div class="detail-row">
+        <div class="detail-label">Kunde</div>
+        <div class="detail-value">${escapeHtml(row.name || "")}</div>
+      </div>
+
+      <div class="detail-row">
+        <div class="detail-label">Telefon</div>
+        <div class="detail-value">
+          ${phone
+            ? `<a href="tel:${escapeHtml(phone)}" style="color:#ffd000">${escapeHtml(phone)}</a>`
+            : "Keine Telefonnummer angegeben."}
+        </div>
+      </div>
+
+      <div class="detail-row">
+        <div class="detail-label">E-Mail</div>
+        <div class="detail-value">
+          ${email
+            ? `<a href="mailto:${escapeHtml(email)}" style="color:#ffd000">${escapeHtml(email)}</a>`
+            : "Keine E-Mail angegeben."}
+        </div>
+      </div>
+
+      <div class="detail-row">
+        <div class="detail-label">Status</div>
+        <div class="detail-value">
+          <span class="badge">${escapeHtml(row.status || "offen")}</span>
+        </div>
+      </div>
+    </div>
+  `;
+
+  detailView.scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
+}
+
+function showList() {
+  detailView.classList.add("hidden");
+}
+
+/* FACHBETRIEBE */
+async function loadFirms() {
+  firmsMessage.innerHTML = "";
+  firmList.innerHTML = "";
+
+  showSuccess(firmsMessage, "Fachbetriebe werden geladen …");
+
+  try {
+    const { data, error } = await client
+      .from("fachbetriebe")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      showError(
+        firmsMessage,
+        "Fachbetriebe konnten nicht geladen werden: " + error.message
+      );
+      return;
+    }
+
+    firmsMessage.innerHTML = "";
+
+    if (!data || data.length === 0) {
+      showSuccess(
+        firmList,
+        "Keine Fachbetriebe in der Tabelle fachbetriebe gefunden."
+      );
+      return;
+    }
+
+    data.forEach(firm => {
+      const isApproved = firm.freigeschaltet === true;
+
+      const item = document.createElement("article");
+      item.className = "firm";
+
+      item.innerHTML = `
+        <div class="firm-title">
+          <div class="firm-name">
+            ${escapeHtml(firm.firma || firm.firmenname || "Firma ohne Namen")}
+          </div>
+          <span class="badge ${isApproved ? "approved" : "pending"}">
+            ${isApproved ? "Freigeschaltet" : "Wartet auf Freischaltung"}
+          </span>
+        </div>
+
+        <div class="firm-info">
+          👤 Ansprechpartner:
+          ${escapeHtml(firm.inhaber || firm.ansprechpartner || "Keine Angabe")}
+        </div>
+
+        <div class="firm-info">
+          ✉️ ${escapeHtml(firm.email || "Keine E-Mail")}
+        </div>
+
+        <div class="firm-info">
+          📞 ${escapeHtml(firm.telefon || "Keine Telefonnummer")}
+        </div>
+
+        <div class="firm-info">
+          📍 ${escapeHtml([firm.plz, firm.ort].filter(Boolean).join(" ") || "Kein Ort angegeben")}
+        </div>
+
+        <div class="firm-info">
+          🛠️ Leistungen: ${escapeHtml(formatLeistungen(firm.leistungen))}
+        </div>
+
+        <div class="firm-info">
+          Umkreis:
+          ${escapeHtml(firm.radius_km == null ? "Keine Angabe" : String(firm.radius_km) + " km")}
+        </div>
+
+        <div class="firm-info">
+          Abo-Status: ${escapeHtml(firm.abo_status || "unbekannt")}
+        </div>
+
+        <div class="firm-actions">
+          <button type="button" data-action="approval">
+            ${isApproved ? "Freischaltung zurücknehmen" : "Betrieb freischalten"}
+          </button>
+        </div>
+      `;
+
+      const actionButton = item.querySelector('button[data-action="approval"]');
+
+      actionButton.addEventListener("click", () => {
+        setFirmApproval(firm.id, !isApproved, actionButton);
       });
 
-      if (error) {
-        loginMsg.innerHTML =
-          '<div class="error">Anmeldung fehlgeschlagen. Bitte Zugangsdaten prüfen.</div>';
-        return;
-      }
-
-      await updateUI();
-    } finally {
-      button.disabled = false;
-    }
+      firmList.appendChild(item);
+    });
+  } catch (error) {
+    showError(
+      firmsMessage,
+      "Unerwarteter Fehler beim Laden: " +
+      (error.message || "Unbekannter Fehler")
+    );
   }
-);
+}
 
-/* ABMELDEN */
-logoutBtn.addEventListener("click", async () => {
-  const { error } = await client.auth.signOut();
-
-  if (error) {
-    alert("Abmelden fehlgeschlagen: " + error.message);
+async function setFirmApproval(firmId, approved, button) {
+  if (!firmId) {
+    showError(
+      firmsMessage,
+      "Dieser Betrieb hat keine ID. Bitte die Tabellenstruktur prüfen."
+    );
     return;
   }
 
-  await updateUI();
-});
+  const confirmation = approved
+    ? "Diesen Fachbetrieb freischalten?"
+    : "Die Freischaltung dieses Fachbetriebs zurücknehmen?";
 
-/* EINZELNE BEREICHE AKTUALISIEREN */
-document.getElementById("refreshRequests")
+  if (!window.confirm(confirmation)) return;
+
+  button.disabled = true;
+  showSuccess(firmsMessage, "Freischaltung wird gespeichert …");
+
+  try {
+    const { error } = await client
+      .from("fachbetriebe")
+      .update({ freigeschaltet: approved })
+      .eq("id", firmId);
+
+    if (error) {
+      showError(
+        firmsMessage,
+        "Änderung fehlgeschlagen: " + error.message +
+        ". Bitte Berechtigungen und RLS-Regeln prüfen."
+      );
+      button.disabled = false;
+      return;
+    }
+
+    showSuccess(
+      firmsMessage,
+      approved
+        ? "Fachbetrieb wurde freigeschaltet."
+        : "Freischaltung wurde zurückgenommen."
+    );
+
+    await loadFirms();
+  } catch (error) {
+    showError(
+      firmsMessage,
+      "Unerwarteter Fehler: " +
+      (error.message || "Unbekannter Fehler")
+    );
+    button.disabled = false;
+  }
+}
+
+/* BUTTONS UND AUTH */
+document.getElementById("loginBtn")
+  .addEventListener("click", login);
+
+document.getElementById("password")
+  .addEventListener("keydown", event => {
+    if (event.key === "Enter") login();
+  });
+
+document.getElementById("logoutBtn")
+  .addEventListener("click", logout);
+
+document.getElementById("refreshRequestsBtn")
   .addEventListener("click", loadRequests);
 
-document.getElementById("refreshFach")
-  .addEventListener("click", loadFachbetriebe);
+document.getElementById("refreshFirmsBtn")
+  .addEventListener("click", loadFirms);
 
-document.getElementById("refreshPartner")
-  .addEventListener("click", loadPartnerbetriebe);
+document.getElementById("backBtn")
+  .addEventListener("click", showList);
 
-/* SESSION-WECHSEL */
-client.auth.onAuthStateChange((event, session) => {
-  if (event === "SIGNED_OUT") {
-    loginCard.classList.remove("hidden");
-    adminCard.classList.add("hidden");
-    logoutBtn.classList.add("hidden");
-  } else if (event === "SIGNED_IN" && session) {
-    loginCard.classList.add("hidden");
-    adminCard.classList.remove("hidden");
-    logoutBtn.classList.remove("hidden");
+requestsTab.addEventListener("click", () => showSection("requests"));
+firmsTab.addEventListener("click", () => showSection("firms"));
+
+client.auth.onAuthStateChange((_event, session) => {
+  if (session) {
+    loginBox.classList.add("hidden");
+    adminBox.classList.remove("hidden");
+  } else {
+    loginBox.classList.remove("hidden");
+    adminBox.classList.add("hidden");
   }
 });
 
-/* START */
 updateUI();
 </script>
 </body>
